@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#86A788" />
+<meta name="description" content="My personal recipe book — browse, search, and save your favourite recipes." />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Recipe Book" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>🌿 My Recipe Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Lato', sans-serif; background: #FFFDEC; min-height: 100vh; }
+
+  /* ── Install banner ── */
+  #install-banner { display: none; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #2d2d2d; color: #fff; border-radius: 16px; padding: 12px 18px; z-index: 2000; box-shadow: 0 8px 24px rgba(0,0,0,0.25); align-items: center; gap: 12px; max-width: 360px; width: calc(100% - 32px); }
+  #install-banner.show { display: flex; }
+  #install-banner p { font-size: 13px; line-height: 1.4; flex: 1; }
+  #install-banner p strong { display: block; margin-bottom: 2px; }
+  #install-btn { background: #86A788; color: #fff; border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  #install-dismiss { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; padding: 0 2px; }
+
+  /* ── Header ── */
+  header { background: #86A788; padding: 28px 40px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; max-width: 1080px; margin-left: auto; margin-right: auto; }
+  .header-top h1 { font-family: 'Playfair Display', serif; font-size: 34px; color: #FFFDEC; letter-spacing: -0.5px; }
+  .header-top p { color: rgba(255,253,236,0.75); font-size: 13px; margin-top: 2px; }
+  #add-btn { background: #FFFDEC; color: #86A788; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+  .search-wrap { position: relative; max-width: 1080px; margin: 0 auto 16px; }
+  .search-wrap span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+  #search { width: 100%; padding: 12px 14px 12px 40px; border-radius: 14px; border: none; font-size: 14px; background: rgba(255,253,236,0.9); outline: none; }
+  #ing-hint { display: none; max-width: 1080px; margin: 0 auto 10px; padding: 8px 14px; background: rgba(255,253,236,0.15); border-radius: 10px; font-size: 12px; color: #FFFDEC; }
+  .view-tabs { display: flex; gap: 8px; max-width: 1080px; margin: 0 auto -1px; }
+  .view-tab { padding: 9px 18px; border-radius: 10px 10px 0 0; border: none; background: transparent; color: rgba(255,253,236,0.8); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .view-tab.active { background: #FFFDEC; color: #86A788; }
+
+  /* ── Category pills ── */
+  .cats-bar { background: #fff; border-bottom: 1px solid #eee8df; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cats-inner { display: flex; gap: 6px; padding: 12px 16px; max-width: 1080px; margin: 0 auto; width: max-content; }
+  .cat-btn { padding: 7px 16px; border-radius: 20px; border: 2px solid #e8e0d8; background: #fff; color: #666; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .cat-btn.active { border-color: #86A788; background: #86A788; color: #fff; }
+
+  /* ── Grid ── */
+  main { max-width: 1080px; margin: 0 auto; padding: 28px 40px; }
+  #grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .empty { text-align: center; padding: 60px 0; color: #bbb; }
+  .empty .empty-icon { font-size: 52px; margin-bottom: 16px; }
+
+  /* ── Recipe Card ── */
+  .card { background: #fff; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 12px rgba(134,167,136,0.12); border: 1px solid #eee8df; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(134,167,136,0.22); }
+  .card-img { height: 120px; background: linear-gradient(135deg, #f0f7f0, #ffe2e2); display: flex; align-items: center; justify-content: center; font-size: 52px; }
+  .card-fav { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .card-fav.active { background: #FFCFCF; }
+  .card-cat { position: absolute; top: 10px; left: 10px; background: #86A788; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px; }
+  .card-body { padding: 12px 14px 14px; }
+  .card-body h3 { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: #2d2d2d; margin-bottom: 4px; }
+  .card-body p { font-size: 12px; color: #888; line-height: 1.4; margin-bottom: 10px; }
+  .card-meta { display: flex; gap: 10px; font-size: 11px; color: #666; margin-bottom: 10px; }
+  .kcal-pill { display: inline-flex; align-items: center; gap: 4px; background: #fff4e6; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; color: #e07030; }
+
+  /* ── Modal overlay ── */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+  .modal-bg.open { display: flex; }
+  .modal { background: #FFFDEC; border-radius: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+  .modal-header-img { height: 160px; background: linear-gradient(135deg, #86A788, #b5d4b7); display: flex; align-items: center; justify-content: center; font-size: 72px; position: relative; flex-shrink: 0; }
+  .modal-close { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; }
+  .modal-fav { position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; }
+  .modal-fav.active { background: #FFCFCF; }
+  .modal-body { overflow-y: auto; flex: 1; padding: 20px 22px 24px; }
+  .modal-cat-badge { background: #86A788; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 24px; color: #2d2d2d; margin-bottom: 4px; }
+  .modal-desc { color: #777; font-size: 13px; margin-bottom: 14px; }
+  .stats-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-box { background: #fff; border-radius: 12px; padding: 8px 14px; text-align: center; border: 1px solid #eee8df; flex: 1; min-width: 70px; }
+  .stat-box .s-icon { font-size: 16px; }
+  .stat-box .s-label { font-size: 10px; color: #aaa; }
+  .stat-box .s-val { font-size: 13px; font-weight: 700; color: #333; }
+  .stat-box.kcal { background: #fff4e6; border-color: #ffd9a8; }
+  .stat-box.kcal .s-label, .stat-box.kcal .s-val { color: #e07030; }
+  .macros-box { background: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #eee8df; }
+  .macros-box h4 { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; }
+  .macro-row { margin-bottom: 6px; }
+  .macro-row-top { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-bottom: 2px; }
+  .macro-row-top span:last-child { font-weight: 600; }
+  .macro-track { height: 6px; border-radius: 4px; background: #f0ece6; overflow: hidden; }
+  .macro-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab-btn { flex: 1; padding: 9px 0; border-radius: 10px; border: 2px solid #ddd; background: transparent; color: #888; font-weight: 700; font-size: 13px; cursor: pointer; text-transform: capitalize; transition: all 0.2s; }
+  .tab-btn.active { border-color: #86A788; background: #86A788; color: #fff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .ing-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f5f0e8; font-size: 14px; }
+  .ing-dot { width: 8px; height: 8px; border-radius: 50%; background: #86A788; margin-right: 12px; flex-shrink: 0; }
+  .ing-amt { font-weight: 700; color: #333; }
+  .ing-name { margin-left: 8px; color: #666; }
+  .step-item { display: flex; gap: 14px; margin-bottom: 16px; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: #86A788; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-text { line-height: 1.6; font-size: 14px; color: #444; padding-top: 4px; }
+
+  /* ── Add Recipe Modal ── */
+  .add-modal { background: #FFFDEC; border-radius: 24px; width: 100%; max-width: 540px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+  .add-header { padding: 20px 22px 0; flex-shrink: 0; }
+  .add-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .add-header-row h2 { font-family: 'Playfair Display', serif; font-size: 22px; color: #2d2d2d; }
+  .add-header-row button { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-tab { flex: 1; padding: 9px 0; border-radius: 10px; border: 2px solid #ddd; background: transparent; color: #888; font-weight: 700; font-size: 12px; cursor: pointer; }
+  .mode-tab.active { border-color: #86A788; background: #86A788; color: #fff; }
+  .add-body { overflow-y: auto; flex: 1; padding: 0 22px 22px; }
+  .add-body textarea { width: 100%; height: 180px; border-radius: 12px; border: 1.5px solid #ddd; padding: 12px; font-size: 13px; font-family: inherit; resize: vertical; background: #fff; outline: none; }
+  .ai-hint { color: #777; font-size: 13px; margin-bottom: 12px; }
+  #ai-error { color: #e05050; font-size: 12px; margin-top: 6px; display: none; }
+  .green-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; background: #86A788; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 12px; }
+  .green-btn:disabled { background: #ccc; cursor: default; }
+  label.field-label { font-size: 12px; font-weight: 700; color: #666; display: block; margin-bottom: 4px; margin-top: 12px; }
+  .field-input { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #ddd; font-size: 13px; background: #fff; outline: none; font-family: inherit; }
+  .field-select { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #ddd; font-size: 13px; background: #fff; outline: none; }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > div { flex: 1; }
+  .macro-row-inputs { display: flex; gap: 8px; }
+  .macro-inp-wrap { flex: 1; }
+  .macro-inp-wrap .mlabel { font-size: 10px; color: #aaa; margin-bottom: 3px; text-transform: capitalize; }
+  .macro-inp-wrap input { width: 100%; padding: 7px 8px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 13px; background: #fff; outline: none; }
+  .ing-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .ing-row input[data-role="amount"] { width: 60px; padding: 7px 8px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; outline: none; }
+  .ing-row select { width: 78px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; outline: none; padding: 7px 4px; }
+  .ing-row input[data-role="name"] { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; outline: none; }
+  .small-add-btn { background: #86A788; color: #fff; border: none; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .step-row { display: flex; gap: 8px; margin-bottom: 6px; }
+  .step-circle { width: 24px; height: 24px; border-radius: 50%; background: #86A788; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 6px; }
+  .step-row textarea { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; resize: vertical; min-height: 60px; font-family: inherit; outline: none; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; margin-top: 12px; }
+  .section-header span { font-size: 12px; font-weight: 700; color: #666; }
+
+  footer { text-align: center; padding: 20px 0 30px; color: #c4b9a8; font-size: 12px; }
+
+  @media (max-width: 700px) {
+    header { padding: 20px 16px 0; }
+    .header-top h1 { font-size: 24px; }
+    main { padding: 20px 14px; }
+    #grid { grid-template-columns: 1fr; gap: 14px; }
+  }
+  @media (min-width: 701px) and (max-width: 900px) {
+    #grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Install Banner ─────────────────────────────────────────────────────── -->
+<div id="install-banner">
+  <p><strong>📱 Add to Home Screen</strong>Install this app on your phone for quick access!</p>
+  <button id="install-btn">Install</button>
+  <button id="install-dismiss">✕</button>
+</div>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-top">
+    <div>
+      <h1>🌿 My Recipe Book</h1>
+      <p id="recipe-count">8 recipes · 2 favorites</p>
+    </div>
+    <button id="add-btn">+ Add Recipe</button>
+  </div>
+  <div class="search-wrap">
+    <span>🔍</span>
+    <input id="search" type="text" placeholder="Search recipes or ingredients…" />
+  </div>
+  <div id="ing-hint"></div>
+  <div class="view-tabs">
+    <button class="view-tab active" data-view="browse">📖 Browse</button>
+    <button class="view-tab" data-view="favorites">❤️ Favorites</button>
+  </div>
+</header>
+
+<div class="cats-bar">
+  <div class="cats-inner" id="cat-bar"></div>
+</div>
+
+<main>
+  <div id="grid"></div>
+</main>
+
+<footer>🌿 Made with love · <span id="footer-count">8</span> recipes collected</footer>
+
+<!-- ── Recipe Detail Modal ── -->
+<div class="modal-bg" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header-img" id="detail-img">
+      <button class="modal-close" id="detail-close">✕</button>
+      <button class="modal-fav" id="detail-fav"></button>
+      <span id="detail-emoji"></span>
+    </div>
+    <div class="modal-body">
+      <span class="modal-cat-badge" id="detail-cat"></span>
+      <h2 class="modal-title" id="detail-title"></h2>
+      <p class="modal-desc" id="detail-desc"></p>
+      <div class="stats-row" id="detail-stats"></div>
+      <div class="macros-box">
+        <h4>Nutrition Breakdown (per serving)</h4>
+        <div id="detail-macros"></div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="ingredients">Ingredients</button>
+        <button class="tab-btn" data-tab="steps">Steps</button>
+      </div>
+      <div class="tab-panel active" id="tab-ingredients"></div>
+      <div class="tab-panel" id="tab-steps"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Recipe Modal ── -->
+<div class="modal-bg" id="add-modal">
+  <div class="add-modal">
+    <div class="add-header">
+      <div class="add-header-row">
+        <h2>Add New Recipe</h2>
+        <button id="add-close">✕</button>
+      </div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="ai">✨ Paste Article/Post</button>
+        <button class="mode-tab" data-mode="manual">✏️ Manual Entry</button>
+      </div>
+    </div>
+    <div class="add-body">
+      <div id="panel-ai">
+        <p class="ai-hint">Paste any recipe article, Facebook post, blog text, or TikTok caption. Claude will extract the recipe automatically!</p>
+        <textarea id="ai-text" placeholder="Paste your recipe article, social media post, or any text here…"></textarea>
+        <p id="ai-error">Couldn't extract recipe. Please check the text or try again.</p>
+        <button class="green-btn" id="ai-extract-btn">✨ Extract Recipe with AI</button>
+      </div>
+      <div id="panel-manual" style="display:none">
+        <label class="field-label">Title</label>
+        <input class="field-input" id="m-title" type="text" />
+        <label class="field-label">Description</label>
+        <input class="field-input" id="m-desc" type="text" />
+        <div class="row2">
+          <div>
+            <label class="field-label">Category</label>
+            <select class="field-select" id="m-cat">
+              <option>Quick Cook</option><option>Soup</option><option>Korean</option>
+              <option>Japanese</option><option>Western</option><option>Filipino</option>
+              <option>Dessert</option><option>Snack</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Servings</label>
+            <input class="field-input" id="m-servings" type="number" value="2" />
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label class="field-label">Prep Time</label>
+            <input class="field-input" id="m-prep" type="text" placeholder="e.g. 15 min" />
+          </div>
+          <div>
+            <label class="field-label">Cook Time</label>
+            <input class="field-input" id="m-cook" type="text" placeholder="e.g. 30 min" />
+          </div>
+        </div>
+        <label class="field-label">Calories (per serving)</label>
+        <input class="field-input" id="m-cal" type="number" value="0" />
+        <label class="field-label">Macros (grams per serving)</label>
+        <div class="macro-row-inputs">
+          <div class="macro-inp-wrap"><div class="mlabel">Protein</div><input type="number" id="m-protein" value="0" /></div>
+          <div class="macro-inp-wrap"><div class="mlabel">Carbs</div><input type="number" id="m-carbs" value="0" /></div>
+          <div class="macro-inp-wrap"><div class="mlabel">Fat</div><input type="number" id="m-fat" value="0" /></div>
+          <div class="macro-inp-wrap"><div class="mlabel">Fiber</div><input type="number" id="m-fiber" value="0" /></div>
+        </div>
+        <label class="field-label">Tags (comma-separated)</label>
+        <input class="field-input" id="m-tags" type="text" placeholder="e.g. spicy, comfort, quick" />
+        <div class="section-header">
+          <span>Ingredients</span>
+          <button class="small-add-btn" id="add-ing-btn">+ Add</button>
+        </div>
+        <div id="ing-list"></div>
+        <div class="section-header">
+          <span>Steps</span>
+          <button class="small-add-btn" id="add-step-btn">+ Add</button>
+        </div>
+        <div id="step-list"></div>
+        <button class="green-btn" id="manual-save-btn">💾 Save Recipe</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const CATEGORIES = ["All","Quick Cook","Soup","Korean","Japanese","Western","Filipino","Dessert","Snack"];
+const CAT_EMOJI  = {All:"🍽️","Quick Cook":"⚡",Soup:"🍲",Korean:"🇰🇷",Japanese:"🇯🇵",Western:"🍴",Filipino:"🇵🇭",Dessert:"🍰",Snack:"🍡"};
+
+let recipes = [
+  { id:1, title:"Kimchi Jjigae", category:"Korean", image:"🥘", description:"A hearty, spicy Korean kimchi stew with tofu and pork belly.", prepTime:"10 min", cookTime:"25 min", servings:2, calories:320, macros:{protein:22,carbs:18,fat:16,fiber:4}, tags:["spicy","comfort","fermented"], favorite:true,
+    ingredients:[{amount:200,unit:"g",name:"aged kimchi"},{amount:150,unit:"g",name:"pork belly, sliced"},{amount:300,unit:"g",name:"soft tofu, cubed"},{amount:500,unit:"ml",name:"water or anchovy broth"},{amount:1,unit:"tbsp",name:"gochugaru (Korean chili flakes)"},{amount:1,unit:"tbsp",name:"soy sauce"},{amount:1,unit:"tsp",name:"sesame oil"},{amount:2,unit:"stalks",name:"green onion, chopped"}],
+    steps:["In a pot over medium heat, sauté pork belly until lightly browned, about 3–4 minutes.","Add kimchi and gochugaru. Stir and cook for 2 minutes until fragrant.","Pour in 500 ml of water or broth. Bring to a boil.","Add soy sauce and tofu. Reduce heat and simmer for 15 minutes.","Drizzle with sesame oil, top with green onion, and serve hot with rice."]},
+  { id:2, title:"Sinigang na Baboy", category:"Filipino", image:"🍲", description:"Classic Filipino sour tamarind pork soup with vegetables.", prepTime:"15 min", cookTime:"45 min", servings:4, calories:280, macros:{protein:26,carbs:14,fat:12,fiber:5}, tags:["sour","soup","comfort"], favorite:false,
+    ingredients:[{amount:500,unit:"g",name:"pork ribs or belly"},{amount:1,unit:"liter",name:"water"},{amount:1,unit:"packet",name:"sinigang mix (tamarind base)"},{amount:2,unit:"medium",name:"tomatoes, quartered"},{amount:1,unit:"medium",name:"onion, quartered"},{amount:200,unit:"g",name:"kangkong (water spinach)"},{amount:150,unit:"g",name:"long beans, cut into 2-inch pieces"},{amount:2,unit:"pcs",name:"radish, sliced"},{amount:2,unit:"tsp",name:"fish sauce (patis)"}],
+    steps:["Boil 1 liter of water. Add pork ribs and blanch for 5 minutes. Drain and rinse.","In a fresh pot, add pork, onion, and tomatoes. Cover with 1 liter of water and bring to a boil.","Lower heat and simmer for 30 minutes until pork is tender.","Stir in sinigang mix and radish. Cook 5 more minutes.","Add long beans and cook 3 minutes. Add kangkong last and cook 1 minute.","Season with fish sauce. Serve hot with steamed rice."]},
+  { id:3, title:"Matcha Lava Cake", category:"Dessert", image:"🍰", description:"Molten matcha chocolate cake with a gooey green tea center.", prepTime:"15 min", cookTime:"12 min", servings:4, calories:410, macros:{protein:8,carbs:48,fat:22,fiber:2}, tags:["sweet","matcha","baked"], favorite:true,
+    ingredients:[{amount:100,unit:"g",name:"white chocolate, chopped"},{amount:80,unit:"g",name:"unsalted butter"},{amount:2,unit:"tbsp",name:"matcha powder"},{amount:3,unit:"pcs",name:"eggs"},{amount:3,unit:"tbsp",name:"sugar"},{amount:3,unit:"tbsp",name:"all-purpose flour"},{amount:1,unit:"tsp",name:"vanilla extract"},{amount:1,unit:"pinch",name:"salt"}],
+    steps:["Preheat oven to 200°C (390°F). Grease 4 ramekins with butter.","Melt white chocolate and butter together in a bowl over simmering water. Let cool slightly.","Whisk in matcha powder until smooth.","Beat eggs, sugar, and vanilla until pale. Fold into the chocolate mixture.","Sift in flour and salt. Mix until just combined.","Pour into ramekins. Bake 11–12 minutes — edges should be set, center still jiggly.","Let rest 1 minute, then invert onto plates. Dust with extra matcha. Serve immediately."]},
+  { id:4, title:"Gyoza (Pan-Fried Dumplings)", category:"Japanese", image:"🥟", description:"Crispy-bottomed Japanese dumplings with juicy pork filling.", prepTime:"30 min", cookTime:"15 min", servings:4, calories:340, macros:{protein:18,carbs:34,fat:14,fiber:2}, tags:["crispy","dumplings","snack"], favorite:false,
+    ingredients:[{amount:24,unit:"pcs",name:"gyoza wrappers"},{amount:250,unit:"g",name:"ground pork"},{amount:150,unit:"g",name:"napa cabbage, finely chopped"},{amount:2,unit:"stalks",name:"green onion, minced"},{amount:1,unit:"tbsp",name:"soy sauce"},{amount:1,unit:"tbsp",name:"sesame oil"},{amount:1,unit:"tsp",name:"fresh ginger, grated"},{amount:2,unit:"cloves",name:"garlic, minced"},{amount:3,unit:"tbsp",name:"vegetable oil (for frying)"},{amount:60,unit:"ml",name:"water (for steaming)"}],
+    steps:["Salt cabbage lightly, let sit 5 minutes, then squeeze out moisture.","Mix cabbage with pork, green onion, soy sauce, sesame oil, ginger, and garlic.","Place 1 tsp filling in each wrapper. Fold and pleat the edges to seal.","Heat oil in a pan over medium-high. Add gyoza flat-side down. Cook 2 minutes until golden.","Pour in 60 ml water and immediately cover. Steam for 6 minutes.","Remove lid and cook 1 more minute until bottoms are crisp again.","Serve with soy sauce mixed with rice vinegar for dipping."]},
+  { id:5, title:"Creamy Mushroom Pasta", category:"Western", image:"🍝", description:"Rich and earthy mushroom pasta in a garlic cream sauce.", prepTime:"10 min", cookTime:"20 min", servings:2, calories:520, macros:{protein:16,carbs:62,fat:24,fiber:4}, tags:["pasta","creamy","quick"], favorite:false,
+    ingredients:[{amount:200,unit:"g",name:"fettuccine or spaghetti"},{amount:250,unit:"g",name:"mixed mushrooms, sliced"},{amount:200,unit:"ml",name:"heavy cream"},{amount:3,unit:"cloves",name:"garlic, minced"},{amount:30,unit:"g",name:"parmesan, grated"},{amount:2,unit:"tbsp",name:"butter"},{amount:1,unit:"tbsp",name:"olive oil"},{amount:1,unit:"tsp",name:"dried thyme"},{amount:1,unit:"tsp",name:"salt"},{amount:0.5,unit:"tsp",name:"black pepper"}],
+    steps:["Cook pasta according to package directions. Reserve ½ cup pasta water. Drain.","Heat olive oil and butter in a pan over medium-high. Add mushrooms. Do not stir for 2 minutes — let them brown.","Stir and cook 2 more minutes. Add garlic and thyme. Cook 1 minute.","Pour in cream. Simmer 3–4 minutes until slightly thickened.","Add pasta and toss. Add pasta water if too thick.","Stir in parmesan. Season with salt and pepper. Serve immediately."]},
+  { id:6, title:"Tom Yum Soup", category:"Soup", image:"🍜", description:"Fragrant Thai hot and sour soup with shrimp and lemongrass.", prepTime:"10 min", cookTime:"20 min", servings:2, calories:180, macros:{protein:20,carbs:10,fat:6,fiber:2}, tags:["spicy","sour","thai","soup"], favorite:false,
+    ingredients:[{amount:700,unit:"ml",name:"chicken or shrimp stock"},{amount:200,unit:"g",name:"shrimp, peeled and deveined"},{amount:2,unit:"stalks",name:"lemongrass, bruised and cut"},{amount:3,unit:"slices",name:"galangal (or ginger)"},{amount:4,unit:"pcs",name:"kaffir lime leaves"},{amount:150,unit:"g",name:"mushrooms, halved"},{amount:2,unit:"tbsp",name:"fish sauce"},{amount:2,unit:"tbsp",name:"lime juice"},{amount:2,unit:"pcs",name:"Thai chilies, smashed"},{amount:1,unit:"tbsp",name:"tom yum paste"}],
+    steps:["Bring stock to a boil. Add lemongrass, galangal, and lime leaves.","Stir in tom yum paste and chilies. Simmer 5 minutes.","Add mushrooms and cook 3 minutes.","Add shrimp and cook 2–3 minutes until pink.","Season with fish sauce and lime juice. Taste and adjust sourness.","Remove aromatics before serving. Garnish with cilantro."]},
+  { id:7, title:"Onigiri (Rice Balls)", category:"Snack", image:"🍙", description:"Japanese rice triangles with a savory salmon filling, wrapped in nori.", prepTime:"20 min", cookTime:"0 min", servings:4, calories:210, macros:{protein:10,carbs:38,fat:4,fiber:1}, tags:["japanese","snack","rice"], favorite:false,
+    ingredients:[{amount:2,unit:"cups",name:"cooked Japanese short-grain rice (warm)"},{amount:100,unit:"g",name:"canned salmon, drained and flaked"},{amount:1,unit:"tbsp",name:"mayonnaise"},{amount:1,unit:"tsp",name:"soy sauce"},{amount:4,unit:"sheets",name:"nori, cut into strips"},{amount:1,unit:"tsp",name:"salt (for hands)"}],
+    steps:["Mix flaked salmon with mayo and soy sauce. Set aside.","Wet your hands with water and rub with a pinch of salt.","Take about ½ cup of rice, press flat in your palm.","Place 1 tbsp of salmon filling in the center.","Fold rice around filling and press firmly into a triangle shape.","Wrap base with a strip of nori. Serve immediately or wrap in plastic for later."]},
+  { id:8, title:"Tinolang Manok", category:"Quick Cook", image:"🍗", description:"Light Filipino ginger chicken soup — simple, warming, and nutritious.", prepTime:"10 min", cookTime:"30 min", servings:4, calories:240, macros:{protein:28,carbs:12,fat:8,fiber:3}, tags:["soup","chicken","filipino","light"], favorite:false,
+    ingredients:[{amount:600,unit:"g",name:"chicken, cut into pieces"},{amount:1,unit:"liter",name:"water"},{amount:1,unit:"thumb",name:"fresh ginger, sliced"},{amount:1,unit:"medium",name:"onion, chopped"},{amount:3,unit:"cloves",name:"garlic, minced"},{amount:1,unit:"medium",name:"green papaya or chayote, cubed"},{amount:100,unit:"g",name:"malunggay leaves (moringa) or spinach"},{amount:2,unit:"tbsp",name:"fish sauce (patis)"},{amount:1,unit:"tbsp",name:"vegetable oil"}],
+    steps:["Heat oil in a pot. Sauté garlic, onion, and ginger until fragrant.","Add chicken pieces. Sear 3–4 minutes until lightly browned.","Pour in water. Bring to a boil, then skim off any foam.","Lower heat and simmer 20 minutes until chicken is cooked through.","Add papaya or chayote. Cook 8 minutes until tender.","Season with fish sauce. Add malunggay leaves, turn off heat. Serve hot."]}
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let activeCategory = "All", activeView = "browse", searchQuery = "", currentRecipeId = null;
+
+// ── PWA: Service Worker + Install Prompt ─────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+});
+document.getElementById('install-dismiss').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('show');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('show');
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function updateCounts() {
+  const fav = recipes.filter(r => r.favorite).length;
+  document.getElementById("recipe-count").textContent = `${recipes.length} recipes · ${fav} favorites`;
+  document.getElementById("footer-count").textContent = recipes.length;
+}
+function getFiltered() {
+  return recipes.filter(r => {
+    if (activeCategory !== "All" && r.category !== activeCategory) return false;
+    if (activeView === "favorites" && !r.favorite) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q) ||
+           r.category.toLowerCase().includes(q) || (r.tags||[]).some(t=>t.toLowerCase().includes(q)) ||
+           r.ingredients.some(i=>i.name.toLowerCase().includes(q));
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById("grid");
+  const list = getFiltered();
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🍽️</div><p>${activeView==="favorites"?"Heart some recipes first!":"No recipes found."}</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(r => `
+    <div class="card" data-id="${r.id}">
+      <div class="card-img">${r.image}</div>
+      <button class="card-fav${r.favorite?" active":""}" data-fav="${r.id}">${r.favorite?"❤️":"🤍"}</button>
+      <span class="card-cat">${r.category}</span>
+      <div class="card-body">
+        <h3>${r.title}</h3><p>${r.description}</p>
+        <div class="card-meta"><span>⏱ ${r.prepTime}</span><span>🔥 ${r.cookTime}</span><span>👥 ${r.servings}</span></div>
+        <span class="kcal-pill">🔥 ${r.calories} kcal</span>
+      </div>
+    </div>`).join("");
+  const hintEl = document.getElementById("ing-hint");
+  if (searchQuery.trim().length >= 2) {
+    const q = searchQuery.toLowerCase();
+    const m = recipes.filter(r=>r.ingredients.some(i=>i.name.toLowerCase().includes(q))&&!r.title.toLowerCase().includes(q)).slice(0,3);
+    hintEl.style.display = m.length ? "block" : "none";
+    if (m.length) hintEl.textContent = "🥄 Ingredient match: " + m.map(r=>r.title).join(", ");
+  } else { hintEl.style.display = "none"; }
+  updateCounts();
+}
+function renderCatBar() {
+  document.getElementById("cat-bar").innerHTML = CATEGORIES.map(c =>
+    `<button class="cat-btn${c===activeCategory?" active":""}" data-cat="${c}">${CAT_EMOJI[c]} ${c}</button>`).join("");
+}
+
+// ── Detail Modal ──────────────────────────────────────────────────────────────
+function macroBar(label, val, max, color) {
+  return `<div class="macro-row"><div class="macro-row-top"><span>${label}</span><span>${val}g</span></div><div class="macro-track"><div class="macro-fill" style="width:${Math.min(val/max*100,100)}%;background:${color}"></div></div></div>`;
+}
+function openDetail(id) {
+  const r = recipes.find(x=>x.id===id); if(!r) return;
+  currentRecipeId = id;
+  document.getElementById("detail-emoji").textContent = r.image;
+  document.getElementById("detail-cat").textContent   = r.category;
+  document.getElementById("detail-title").textContent = r.title;
+  document.getElementById("detail-desc").textContent  = r.description;
+  const fb = document.getElementById("detail-fav");
+  fb.textContent = r.favorite?"❤️":"🤍"; fb.className = "modal-fav"+(r.favorite?" active":"");
+  document.getElementById("detail-stats").innerHTML =
+    [["⏱","Prep",r.prepTime],["🔥","Cook",r.cookTime],["👥","Serves",r.servings]].map(([ic,lb,vl])=>
+      `<div class="stat-box"><div class="s-icon">${ic}</div><div class="s-label">${lb}</div><div class="s-val">${vl}</div></div>`).join("")+
+    `<div class="stat-box kcal"><div class="s-icon">🔥</div><div class="s-label">Calories</div><div class="s-val">${r.calories}</div></div>`;
+  document.getElementById("detail-macros").innerHTML =
+    macroBar("Protein",r.macros.protein,60,"#86A788")+macroBar("Carbs",r.macros.carbs,100,"#FFCFCF")+
+    macroBar("Fat",r.macros.fat,50,"#FFE2E2")+macroBar("Fiber",r.macros.fiber,20,"#b5d4b7");
+  document.getElementById("tab-ingredients").innerHTML =
+    r.ingredients.map(i=>`<div class="ing-item"><div class="ing-dot"></div><span class="ing-amt">${i.amount} ${i.unit}</span><span class="ing-name">${i.name}</span></div>`).join("");
+  document.getElementById("tab-steps").innerHTML =
+    r.steps.map((s,i)=>`<div class="step-item"><div class="step-num">${i+1}</div><p class="step-text">${s}</p></div>`).join("");
+  setActiveTab("ingredients");
+  document.getElementById("detail-modal").classList.add("open");
+}
+function setActiveTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab));
+}
+
+// ── Add Modal ─────────────────────────────────────────────────────────────────
+let activeMode = "ai";
+function setMode(mode) {
+  activeMode = mode;
+  document.querySelectorAll(".mode-tab").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
+  document.getElementById("panel-ai").style.display     = mode==="ai"?"block":"none";
+  document.getElementById("panel-manual").style.display = mode==="manual"?"block":"none";
+}
+function buildIngRow() {
+  const d = document.createElement("div"); d.className = "ing-row";
+  d.innerHTML = `<input data-role="amount" type="number" placeholder="Amt" /><select>${["g","kg","ml","liter","cups","tbsp","tsp","pcs","cloves","slices","stalks","medium","large","pinch"].map(u=>`<option>${u}</option>`).join("")}</select><input data-role="name" type="text" placeholder="Ingredient name" />`;
+  return d;
+}
+function buildStepRow(num) {
+  const d = document.createElement("div"); d.className = "step-row";
+  d.innerHTML = `<div class="step-circle">${num}</div><textarea placeholder="Step ${num}…"></textarea>`;
+  return d;
+}
+function resetManualForm() {
+  ["m-title","m-desc","m-prep","m-cook","m-tags"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("m-servings").value=2; document.getElementById("m-cal").value=0;
+  ["m-protein","m-carbs","m-fat","m-fiber"].forEach(id=>document.getElementById(id).value=0);
+  const il=document.getElementById("ing-list"); const sl=document.getElementById("step-list");
+  il.innerHTML=""; sl.innerHTML=""; il.appendChild(buildIngRow()); sl.appendChild(buildStepRow(1));
+}
+function collectManualRecipe() {
+  const ings=[]; document.querySelectorAll("#ing-list .ing-row").forEach(row=>{
+    const name=row.querySelector("[data-role='name']").value;
+    if(name.trim()) ings.push({amount:parseFloat(row.querySelector("[data-role='amount']").value)||0,unit:row.querySelector("select").value,name});
+  });
+  const steps=[]; document.querySelectorAll("#step-list textarea").forEach(ta=>{if(ta.value.trim())steps.push(ta.value.trim());});
+  return { id:Date.now(), favorite:false, image:"🍽️",
+    title:document.getElementById("m-title").value, category:document.getElementById("m-cat").value,
+    description:document.getElementById("m-desc").value, prepTime:document.getElementById("m-prep").value,
+    cookTime:document.getElementById("m-cook").value, servings:parseInt(document.getElementById("m-servings").value)||2,
+    calories:parseInt(document.getElementById("m-cal").value)||0,
+    macros:{protein:parseInt(document.getElementById("m-protein").value)||0,carbs:parseInt(document.getElementById("m-carbs").value)||0,fat:parseInt(document.getElementById("m-fat").value)||0,fiber:parseInt(document.getElementById("m-fiber").value)||0},
+    tags:document.getElementById("m-tags").value.split(",").map(t=>t.trim()).filter(Boolean), ingredients:ings, steps };
+}
+async function extractRecipeWithAI(text) {
+  const sys=`You are a recipe extraction assistant. Return ONLY valid JSON, no markdown:\n{"title":"","category":"Quick Cook|Soup|Korean|Japanese|Western|Filipino|Dessert|Snack","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"tags":[],"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}`;
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:[{role:"user",content:`Extract recipe:\n\n${text}`}]})});
+  const data=await resp.json();
+  return JSON.parse(data.content.map(b=>b.text||"").join("").replace(/```json|```/g,"").trim());
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+document.addEventListener("click", e => {
+  const card=e.target.closest(".card");
+  if(card&&!e.target.closest(".card-fav")){openDetail(parseInt(card.dataset.id));return;}
+  const fav=e.target.closest(".card-fav");
+  if(fav){recipes=recipes.map(r=>r.id===parseInt(fav.dataset.fav)?{...r,favorite:!r.favorite}:r);renderGrid();return;}
+  const cat=e.target.closest(".cat-btn");
+  if(cat){activeCategory=cat.dataset.cat;renderCatBar();renderGrid();return;}
+  const vt=e.target.closest(".view-tab");
+  if(vt){activeView=vt.dataset.view;document.querySelectorAll(".view-tab").forEach(b=>b.classList.toggle("active",b.dataset.view===activeView));renderGrid();return;}
+  if(e.target===document.getElementById("detail-modal")||e.target.id==="detail-close"){document.getElementById("detail-modal").classList.remove("open");return;}
+  if(e.target.id==="detail-fav"){recipes=recipes.map(r=>r.id===currentRecipeId?{...r,favorite:!r.favorite}:r);const r=recipes.find(x=>x.id===currentRecipeId);e.target.textContent=r.favorite?"❤️":"🤍";e.target.className="modal-fav"+(r.favorite?" active":"");renderGrid();return;}
+  const tb=e.target.closest(".tab-btn");
+  if(tb){setActiveTab(tb.dataset.tab);return;}
+  if(e.target.id==="add-btn"){setMode("ai");document.getElementById("ai-text").value="";document.getElementById("ai-error").style.display="none";document.getElementById("ai-extract-btn").disabled=false;document.getElementById("ai-extract-btn").textContent="✨ Extract Recipe with AI";resetManualForm();document.getElementById("add-modal").classList.add("open");return;}
+  if(e.target===document.getElementById("add-modal")||e.target.id==="add-close"){document.getElementById("add-modal").classList.remove("open");return;}
+  const mt=e.target.closest(".mode-tab");
+  if(mt){setMode(mt.dataset.mode);return;}
+  if(e.target.id==="add-ing-btn"){document.getElementById("ing-list").appendChild(buildIngRow());return;}
+  if(e.target.id==="add-step-btn"){const l=document.getElementById("step-list");l.appendChild(buildStepRow(l.children.length+1));return;}
+  if(e.target.id==="manual-save-btn"){recipes.unshift(collectManualRecipe());renderGrid();document.getElementById("add-modal").classList.remove("open");return;}
+  if(e.target.id==="ai-extract-btn"){
+    const text=document.getElementById("ai-text").value.trim(); if(!text)return;
+    const btn=document.getElementById("ai-extract-btn"),errEl=document.getElementById("ai-error");
+    btn.disabled=true;btn.textContent="✨ Extracting recipe…";errEl.style.display="none";
+    extractRecipeWithAI(text).then(ex=>{recipes.unshift({...ex,id:Date.now(),favorite:false,image:"🍽️"});renderGrid();document.getElementById("add-modal").classList.remove("open");})
+    .catch(()=>{errEl.style.display="block";btn.disabled=false;btn.textContent="✨ Extract Recipe with AI";});return;}
+});
+document.getElementById("search").addEventListener("input",e=>{searchQuery=e.target.value;renderGrid();});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderCatBar(); renderGrid(); resetManualForm();
+</script>
+</body>
+</html>
