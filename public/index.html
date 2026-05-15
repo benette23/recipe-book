@@ -1,517 +1,1253 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#86A788" />
-<meta name="description" content="My personal recipe book — browse, search, and save your favourite recipes." />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Recipe Book" />
-<link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="icon-192.png" />
-<title>🌿 My Recipe Book</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="theme-color" content="#86A788"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Kain"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<title>Kain</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Lato', sans-serif; background: #FFFDEC; min-height: 100vh; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#86A788;--cream:#FFFDEC;--blush:#FFE2E2;--coral:#FFCFCF;--dark:#2d2d2d;--mid:#888;--border:#eee8df}
+body{font-family:'Lato',sans-serif;background:var(--cream);min-height:100vh;overflow-x:hidden}
 
-  /* ── Install banner ── */
-  #install-banner { display: none; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #2d2d2d; color: #fff; border-radius: 16px; padding: 12px 18px; z-index: 2000; box-shadow: 0 8px 24px rgba(0,0,0,0.25); align-items: center; gap: 12px; max-width: 360px; width: calc(100% - 32px); }
-  #install-banner.show { display: flex; }
-  #install-banner p { font-size: 13px; line-height: 1.4; flex: 1; }
-  #install-banner p strong { display: block; margin-bottom: 2px; }
-  #install-btn { background: #86A788; color: #fff; border: none; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; }
-  #install-dismiss { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; padding: 0 2px; }
+/* ── Utility ── */
+.hidden{display:none!important}
+.spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ── Header ── */
-  header { background: #86A788; padding: 28px 40px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; max-width: 1080px; margin-left: auto; margin-right: auto; }
-  .header-top h1 { font-family: 'Playfair Display', serif; font-size: 34px; color: #FFFDEC; letter-spacing: -0.5px; }
-  .header-top p { color: rgba(255,253,236,0.75); font-size: 13px; margin-top: 2px; }
-  #add-btn { background: #FFFDEC; color: #86A788; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-  .search-wrap { position: relative; max-width: 1080px; margin: 0 auto 16px; }
-  .search-wrap span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
-  #search { width: 100%; padding: 12px 14px 12px 40px; border-radius: 14px; border: none; font-size: 14px; background: rgba(255,253,236,0.9); outline: none; }
-  #ing-hint { display: none; max-width: 1080px; margin: 0 auto 10px; padding: 8px 14px; background: rgba(255,253,236,0.15); border-radius: 10px; font-size: 12px; color: #FFFDEC; }
-  .view-tabs { display: flex; gap: 8px; max-width: 1080px; margin: 0 auto -1px; }
-  .view-tab { padding: 9px 18px; border-radius: 10px 10px 0 0; border: none; background: transparent; color: rgba(255,253,236,0.8); font-weight: 700; font-size: 13px; cursor: pointer; }
-  .view-tab.active { background: #FFFDEC; color: #86A788; }
+/* ── Toast ── */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
 
-  /* ── Category pills ── */
-  .cats-bar { background: #fff; border-bottom: 1px solid #eee8df; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .cats-inner { display: flex; gap: 6px; padding: 12px 16px; max-width: 1080px; margin: 0 auto; width: max-content; }
-  .cat-btn { padding: 7px 16px; border-radius: 20px; border: 2px solid #e8e0d8; background: #fff; color: #666; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-  .cat-btn.active { border-color: #86A788; background: #86A788; color: #fff; }
+/* ── Auth ── */
+#auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;background:linear-gradient(160deg,#f0f7f0 0%,var(--cream) 60%)}
+#auth-screen .logo{font-size:72px;margin-bottom:8px}
+#auth-screen h1{font-family:'Playfair Display',serif;font-size:42px;color:var(--dark);margin-bottom:6px;letter-spacing:-1px}
+#auth-screen .tagline{color:var(--mid);font-size:15px;margin-bottom:40px}
+.google-btn{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #e0e0e0;border-radius:14px;padding:14px 28px;font-size:15px;font-weight:700;color:var(--dark);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:box-shadow .2s,transform .1s}
+.google-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.13);transform:translateY(-1px)}
+.google-btn img{width:22px;height:22px}
+#auth-error{color:#e05050;font-size:13px;margin-top:16px}
 
-  /* ── Grid ── */
-  main { max-width: 1080px; margin: 0 auto; padding: 28px 40px; }
-  #grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .empty { text-align: center; padding: 60px 0; color: #bbb; }
-  .empty .empty-icon { font-size: 52px; margin-bottom: 16px; }
+/* ── Loading ── */
+#loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px}
+#loading-screen p{color:var(--mid);font-size:14px}
 
-  /* ── Recipe Card ── */
-  .card { background: #fff; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 12px rgba(134,167,136,0.12); border: 1px solid #eee8df; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
-  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(134,167,136,0.22); }
-  .card-img { height: 120px; background: linear-gradient(135deg, #f0f7f0, #ffe2e2); display: flex; align-items: center; justify-content: center; font-size: 52px; }
-  .card-fav { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  .card-fav.active { background: #FFCFCF; }
-  .card-cat { position: absolute; top: 10px; left: 10px; background: #86A788; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px; }
-  .card-body { padding: 12px 14px 14px; }
-  .card-body h3 { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: #2d2d2d; margin-bottom: 4px; }
-  .card-body p { font-size: 12px; color: #888; line-height: 1.4; margin-bottom: 10px; }
-  .card-meta { display: flex; gap: 10px; font-size: 11px; color: #666; margin-bottom: 10px; }
-  .kcal-pill { display: inline-flex; align-items: center; gap: 4px; background: #fff4e6; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; color: #e07030; }
+/* ── App shell ── */
+#app{display:none;min-height:100vh}
 
-  /* ── Modal overlay ── */
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
-  .modal-bg.open { display: flex; }
-  .modal { background: #FFFDEC; border-radius: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
-  .modal-header-img { height: 160px; background: linear-gradient(135deg, #86A788, #b5d4b7); display: flex; align-items: center; justify-content: center; font-size: 72px; position: relative; flex-shrink: 0; }
-  .modal-close { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; }
-  .modal-fav { position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; }
-  .modal-fav.active { background: #FFCFCF; }
-  .modal-body { overflow-y: auto; flex: 1; padding: 20px 22px 24px; }
-  .modal-cat-badge { background: #86A788; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 24px; color: #2d2d2d; margin-bottom: 4px; }
-  .modal-desc { color: #777; font-size: 13px; margin-bottom: 14px; }
-  .stats-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-  .stat-box { background: #fff; border-radius: 12px; padding: 8px 14px; text-align: center; border: 1px solid #eee8df; flex: 1; min-width: 70px; }
-  .stat-box .s-icon { font-size: 16px; }
-  .stat-box .s-label { font-size: 10px; color: #aaa; }
-  .stat-box .s-val { font-size: 13px; font-weight: 700; color: #333; }
-  .stat-box.kcal { background: #fff4e6; border-color: #ffd9a8; }
-  .stat-box.kcal .s-label, .stat-box.kcal .s-val { color: #e07030; }
-  .macros-box { background: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; border: 1px solid #eee8df; }
-  .macros-box h4 { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; }
-  .macro-row { margin-bottom: 6px; }
-  .macro-row-top { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-bottom: 2px; }
-  .macro-row-top span:last-child { font-weight: 600; }
-  .macro-track { height: 6px; border-radius: 4px; background: #f0ece6; overflow: hidden; }
-  .macro-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-  .tab-btn { flex: 1; padding: 9px 0; border-radius: 10px; border: 2px solid #ddd; background: transparent; color: #888; font-weight: 700; font-size: 13px; cursor: pointer; text-transform: capitalize; transition: all 0.2s; }
-  .tab-btn.active { border-color: #86A788; background: #86A788; color: #fff; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-  .ing-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f5f0e8; font-size: 14px; }
-  .ing-dot { width: 8px; height: 8px; border-radius: 50%; background: #86A788; margin-right: 12px; flex-shrink: 0; }
-  .ing-amt { font-weight: 700; color: #333; }
-  .ing-name { margin-left: 8px; color: #666; }
-  .step-item { display: flex; gap: 14px; margin-bottom: 16px; }
-  .step-num { width: 28px; height: 28px; border-radius: 50%; background: #86A788; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .step-text { line-height: 1.6; font-size: 14px; color: #444; padding-top: 4px; }
+/* ── Header ── */
+header{background:var(--green);padding:22px 32px 0;box-shadow:0 2px 12px rgba(0,0,0,.08);position:sticky;top:0;z-index:200}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;max-width:1100px;margin-left:auto;margin-right:auto}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-family:'Playfair Display',serif;font-size:30px;color:var(--cream);letter-spacing:-0.5px}
+.brand .version{font-size:11px;color:rgba(255,253,236,.6);margin-top:4px}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hbtn{border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.hbtn-primary{background:var(--cream);color:var(--green)}
+.hbtn-ghost{background:rgba(255,253,236,.15);color:var(--cream);border:1px solid rgba(255,253,236,.3)}
+.hbtn-icon{background:rgba(255,253,236,.15);color:var(--cream);border:1px solid rgba(255,253,236,.3);border-radius:10px;padding:8px 10px;font-size:16px;cursor:pointer;transition:all .2s}
+.hbtn-icon.active{background:var(--cream);color:var(--green)}
+.save-dot{width:7px;height:7px;border-radius:50%;background:#b5d4b7;display:inline-block;margin-right:4px;transition:background .3s}
+.save-dot.saving{background:#ffe08a;animation:pulse 1s infinite}
+.save-dot.error{background:var(--coral)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.search-wrap{position:relative;max-width:1100px;margin:0 auto 14px}
+.search-wrap .si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px}
+#search{width:100%;padding:11px 14px 11px 40px;border-radius:13px;border:none;font-size:14px;background:rgba(255,253,236,.9);outline:none;font-family:'Lato',sans-serif}
+.view-tabs{display:flex;gap:6px;max-width:1100px;margin:0 auto -1px}
+.vtab{padding:9px 18px;border-radius:10px 10px 0 0;border:none;background:transparent;color:rgba(255,253,236,.75);font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+.vtab.active{background:var(--cream);color:var(--green)}
 
-  /* ── Add Recipe Modal ── */
-  .add-modal { background: #FFFDEC; border-radius: 24px; width: 100%; max-width: 540px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
-  .add-header { padding: 20px 22px 0; flex-shrink: 0; }
-  .add-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .add-header-row h2 { font-family: 'Playfair Display', serif; font-size: 22px; color: #2d2d2d; }
-  .add-header-row button { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
-  .mode-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-  .mode-tab { flex: 1; padding: 9px 0; border-radius: 10px; border: 2px solid #ddd; background: transparent; color: #888; font-weight: 700; font-size: 12px; cursor: pointer; }
-  .mode-tab.active { border-color: #86A788; background: #86A788; color: #fff; }
-  .add-body { overflow-y: auto; flex: 1; padding: 0 22px 22px; }
-  .add-body textarea { width: 100%; height: 180px; border-radius: 12px; border: 1.5px solid #ddd; padding: 12px; font-size: 13px; font-family: inherit; resize: vertical; background: #fff; outline: none; }
-  .ai-hint { color: #777; font-size: 13px; margin-bottom: 12px; }
-  #ai-error { color: #e05050; font-size: 12px; margin-top: 6px; display: none; }
-  .green-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; background: #86A788; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 12px; }
-  .green-btn:disabled { background: #ccc; cursor: default; }
-  label.field-label { font-size: 12px; font-weight: 700; color: #666; display: block; margin-bottom: 4px; margin-top: 12px; }
-  .field-input { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #ddd; font-size: 13px; background: #fff; outline: none; font-family: inherit; }
-  .field-select { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #ddd; font-size: 13px; background: #fff; outline: none; }
-  .row2 { display: flex; gap: 10px; }
-  .row2 > div { flex: 1; }
-  .macro-row-inputs { display: flex; gap: 8px; }
-  .macro-inp-wrap { flex: 1; }
-  .macro-inp-wrap .mlabel { font-size: 10px; color: #aaa; margin-bottom: 3px; text-transform: capitalize; }
-  .macro-inp-wrap input { width: 100%; padding: 7px 8px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 13px; background: #fff; outline: none; }
-  .ing-row { display: flex; gap: 6px; margin-bottom: 6px; }
-  .ing-row input[data-role="amount"] { width: 60px; padding: 7px 8px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; outline: none; }
-  .ing-row select { width: 78px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; outline: none; padding: 7px 4px; }
-  .ing-row input[data-role="name"] { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; outline: none; }
-  .small-add-btn { background: #86A788; color: #fff; border: none; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
-  .step-row { display: flex; gap: 8px; margin-bottom: 6px; }
-  .step-circle { width: 24px; height: 24px; border-radius: 50%; background: #86A788; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 6px; }
-  .step-row textarea { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #ddd; font-size: 12px; resize: vertical; min-height: 60px; font-family: inherit; outline: none; }
-  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; margin-top: 12px; }
-  .section-header span { font-size: 12px; font-weight: 700; color: #666; }
+/* ── Ingredient suggestion bar ── */
+#ing-hint{background:rgba(255,253,236,.18);max-width:1100px;margin:0 auto 8px;padding:8px 14px;border-radius:10px;font-size:12px;color:var(--cream);display:none}
 
-  footer { text-align: center; padding: 20px 0 30px; color: #c4b9a8; font-size: 12px; }
+/* ── Category bar ── */
+.cats-bar{background:#fff;border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cats-bar::-webkit-scrollbar{display:none}
+.cats-inner{display:flex;gap:6px;padding:10px 20px;width:max-content;max-width:1100px;margin:0 auto}
+.cat-pill{padding:6px 14px;border-radius:20px;border:2px solid #e8e0d8;background:#fff;color:#666;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:5px}
+.cat-pill.active{border-color:var(--green);background:var(--green);color:#fff}
+.cat-pill .cat-edit{opacity:0;font-size:10px;margin-left:2px;transition:opacity .2s}
+.cat-pill:hover .cat-edit{opacity:1}
 
-  @media (max-width: 700px) {
-    header { padding: 20px 16px 0; }
-    .header-top h1 { font-size: 24px; }
-    main { padding: 20px 14px; }
-    #grid { grid-template-columns: 1fr; gap: 14px; }
-  }
-  @media (min-width: 701px) and (max-width: 900px) {
-    #grid { grid-template-columns: repeat(2, 1fr); }
-  }
+/* ── Grid ── */
+main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.empty-state{grid-column:1/-1;text-align:center;padding:60px 0;color:#ccc}
+.empty-state .ei{font-size:52px;margin-bottom:12px}
+
+/* ── Card ── */
+.card{background:#fff;border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:0 2px 12px rgba(134,167,136,.1);border:1px solid var(--border);transition:transform .2s,box-shadow .2s;position:relative;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(134,167,136,.2)}
+.card-media{height:130px;background:linear-gradient(135deg,#f0f7f0,#ffe2e2);display:flex;align-items:center;justify-content:center;font-size:56px;position:relative;overflow:hidden;flex-shrink:0}
+.card-media img{width:100%;height:100%;object-fit:cover}
+.card-fav{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.85);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);z-index:2}
+.card-fav.on{background:var(--coral)}
+.card-archived{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.5);color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:10px;letter-spacing:.5px;z-index:2}
+.card-body{padding:12px 14px 14px;flex:1;display:flex;flex-direction:column}
+.card-cats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.card-cat-tag{background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.3px}
+.card-body h3{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--dark);margin-bottom:4px;line-height:1.3}
+.card-body p{font-size:12px;color:var(--mid);line-height:1.4;margin-bottom:10px;flex:1}
+.card-meta{display:flex;gap:8px;font-size:11px;color:#777;margin-bottom:8px;flex-wrap:wrap}
+.kcal-pill{display:inline-flex;align-items:center;gap:3px;background:#fff4e6;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;color:#e07030}
+
+/* ── FAB ── */
+#fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(134,167,136,.5);z-index:300;display:flex;align-items:center;justify-content:center;transition:transform .2s}
+#fab:hover{transform:scale(1.08)}
+#fab-menu{position:fixed;bottom:90px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:300}
+.fab-item{display:flex;align-items:center;gap:10px;cursor:pointer}
+.fab-item span.label{background:var(--dark);color:#fff;padding:6px 12px;border-radius:10px;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.fab-item .icon{width:44px;height:44px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#fab-menu.hidden{display:none}
+
+/* ── Modal base ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(6px)}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--cream);border-radius:24px;width:100%;max-width:580px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-hdr{padding:20px 22px 0;flex-shrink:0}
+.modal-hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-hdr-row h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--dark)}
+.modal-close-btn{background:none;border:none;font-size:22px;cursor:pointer;color:#aaa;line-height:1}
+.modal-scroll{overflow-y:auto;flex:1;padding:0 22px 24px}
+
+/* ── Detail modal ── */
+.det-hero{height:200px;background:linear-gradient(135deg,var(--green),#b5d4b7);display:flex;align-items:center;justify-content:center;font-size:80px;position:relative;flex-shrink:0;overflow:hidden}
+.det-hero img{width:100%;height:100%;object-fit:cover}
+.det-hero-actions{position:absolute;top:12px;right:12px;display:flex;gap:8px}
+.det-hero-actions button{background:rgba(255,255,255,.85);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 6px rgba(0,0,0,.12)}
+.det-hero-actions .fav-btn.on{background:var(--coral)}
+.det-body{padding:18px 22px 24px;overflow-y:auto;flex:1}
+.det-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.det-cat-tag{background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px}
+.det-title{font-family:'Playfair Display',serif;font-size:26px;color:var(--dark);margin-bottom:4px}
+.det-desc{color:#777;font-size:13px;margin-bottom:16px;line-height:1.6}
+/* Servings adjuster */
+.serving-row{display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:12px 16px;margin-bottom:16px;border:1px solid var(--border)}
+.serving-row label{font-size:13px;font-weight:700;color:#555;flex:1}
+.serving-ctrl{display:flex;align-items:center;gap:10px}
+.srv-btn{width:30px;height:30px;border-radius:50%;border:2px solid var(--green);background:transparent;color:var(--green);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;transition:all .2s}
+.srv-btn:hover{background:var(--green);color:#fff}
+#serving-val{font-size:18px;font-weight:800;color:var(--dark);min-width:28px;text-align:center}
+.stats-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stat-box{background:#fff;border-radius:12px;padding:8px 12px;text-align:center;border:1px solid var(--border);flex:1;min-width:65px}
+.stat-box .si{font-size:15px}.stat-box .sl{font-size:10px;color:#aaa}.stat-box .sv{font-size:13px;font-weight:700;color:var(--dark)}
+.stat-box.kcal{background:#fff4e6;border-color:#ffd9a8}.stat-box.kcal .sl,.stat-box.kcal .sv{color:#e07030}
+.macros-box{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid var(--border)}
+.macros-box h4{font-size:13px;font-weight:700;color:#555;margin-bottom:10px}
+.mrow{margin-bottom:6px}.mrow-top{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:2px}.mrow-top span:last-child{font-weight:600}
+.mtrack{height:6px;border-radius:4px;background:#f0ece6;overflow:hidden}.mfill{height:100%;border-radius:4px;transition:width .5s}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabbtn{flex:1;padding:9px 0;border-radius:10px;border:2px solid #ddd;background:transparent;color:#888;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+.tabbtn.active{border-color:var(--green);background:var(--green);color:#fff}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.ing-item{display:flex;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f5f0e8;font-size:14px}
+.ing-dot{width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:10px;margin-top:5px;flex-shrink:0}
+.ing-amt{font-weight:700;color:var(--dark);min-width:80px}
+.ing-name{color:#666}
+.step-item{display:flex;gap:12px;margin-bottom:14px}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-text{line-height:1.6;font-size:14px;color:#444;padding-top:3px}
+.det-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.dact-btn{flex:1;padding:10px;border-radius:12px;border:2px solid;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;min-width:80px;text-align:center}
+.dact-edit{border-color:var(--green);color:var(--green);background:transparent}.dact-edit:hover{background:var(--green);color:#fff}
+.dact-archive{border-color:#aaa;color:#888;background:transparent}.dact-archive:hover{background:#aaa;color:#fff}
+.dact-delete{border-color:var(--coral);color:#e05050;background:transparent}.dact-delete:hover{background:var(--coral);color:#e05050}
+
+/* ── Cooking mode overlay ── */
+#cook-mode{display:none;position:fixed;inset:0;background:var(--dark);z-index:5000;flex-direction:column;overflow-y:auto;padding:24px}
+#cook-mode.open{display:flex}
+#cook-mode .cm-title{font-family:'Playfair Display',serif;font-size:28px;color:var(--cream);margin-bottom:20px}
+#cook-mode .cm-step{display:flex;gap:16px;margin-bottom:24px;align-items:flex-start;opacity:.4;transition:opacity .3s}
+#cook-mode .cm-step.active{opacity:1}
+#cook-mode .cm-num{width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#cook-mode .cm-text{color:var(--cream);font-size:18px;line-height:1.7;padding-top:5px}
+#cook-mode .cm-controls{position:fixed;bottom:0;left:0;right:0;background:rgba(30,30,30,.95);padding:16px 24px;display:flex;gap:12px;backdrop-filter:blur(8px)}
+#cook-mode .cm-btn{flex:1;padding:14px;border-radius:14px;border:none;font-weight:800;font-size:15px;cursor:pointer}
+#cook-mode .cm-prev{background:rgba(255,255,255,.1);color:var(--cream)}
+#cook-mode .cm-next{background:var(--green);color:#fff}
+#cook-mode .cm-exit{background:rgba(255,100,100,.2);color:#ff8888;font-size:13px;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;position:absolute;top:16px;right:16px}
+
+/* ── Add/Edit Recipe Modal ── */
+.mode-tabs{display:flex;gap:8px;margin-bottom:14px}
+.mtab{flex:1;padding:8px 0;border-radius:10px;border:2px solid #ddd;background:transparent;color:#888;font-weight:700;font-size:12px;cursor:pointer;transition:all .2s}
+.mtab.active{border-color:var(--green);background:var(--green);color:#fff}
+.field-label{font-size:12px;font-weight:700;color:#666;display:block;margin-bottom:4px;margin-top:12px}
+.field-input{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #ddd;font-size:13px;background:#fff;outline:none;font-family:'Lato',sans-serif;transition:border-color .2s}
+.field-input:focus{border-color:var(--green)}
+.field-select{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #ddd;font-size:13px;background:#fff;outline:none}
+.row2{display:flex;gap:10px}.row2>div{flex:1}
+.macro-inputs{display:flex;gap:8px}
+.mi-wrap{flex:1}.mi-wrap .ml{font-size:10px;color:#aaa;margin-bottom:3px;text-transform:capitalize}
+.mi-wrap input{width:100%;padding:7px 8px;border-radius:8px;border:1.5px solid #ddd;font-size:13px;background:#fff;outline:none}
+/* Media picker */
+.media-picker{display:flex;gap:10px;margin-top:4px}
+.mp-option{flex:1;padding:10px;border-radius:12px;border:2px solid #ddd;background:#fff;text-align:center;cursor:pointer;transition:all .2s;font-size:12px;font-weight:700;color:#888}
+.mp-option.active{border-color:var(--green);color:var(--green);background:#f0f7f0}
+#emoji-picker-wrap{display:none;margin-top:10px}
+#emoji-input{font-size:28px;width:80px;text-align:center;padding:8px;border-radius:10px;border:1.5px solid #ddd}
+#photo-upload-wrap{display:none;margin-top:10px}
+.photo-drop{border:2px dashed #ddd;border-radius:12px;padding:20px;text-align:center;cursor:pointer;color:#aaa;font-size:13px;transition:border-color .2s}
+.photo-drop:hover{border-color:var(--green)}
+#photo-preview{width:100%;height:140px;object-fit:cover;border-radius:10px;margin-top:8px;display:none}
+/* Category multi-select */
+.cat-checkboxes{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cat-checkbox{padding:6px 12px;border-radius:20px;border:2px solid #e8e0d8;background:#fff;color:#666;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.cat-checkbox.on{border-color:var(--green);background:var(--green);color:#fff}
+/* Ingredient rows */
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-top:14px;margin-bottom:6px}
+.sec-hdr span{font-size:12px;font-weight:700;color:#666}
+.small-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer}
+.ing-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.ing-row input[data-r=amt]{width:64px;padding:7px 8px;border-radius:8px;border:1.5px solid #ddd;font-size:12px;outline:none}
+.ing-row select{width:80px;border-radius:8px;border:1.5px solid #ddd;font-size:12px;outline:none;padding:7px 4px}
+.ing-row input[data-r=name]{flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid #ddd;font-size:12px;outline:none}
+.ing-row .rm-btn{background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;padding:0 4px;transition:color .2s}
+.ing-row .rm-btn:hover{color:#e05050}
+.step-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.step-num-badge{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:8px}
+.step-row textarea{flex:1;padding:8px 10px;border-radius:8px;border:1.5px solid #ddd;font-size:12px;resize:vertical;min-height:58px;font-family:'Lato',sans-serif;outline:none}
+.step-row .rm-btn{margin-top:8px}
+.green-btn{width:100%;padding:13px;border-radius:12px;border:none;background:var(--green);color:#fff;font-weight:700;font-size:15px;cursor:pointer;margin-top:14px;transition:opacity .2s}
+.green-btn:disabled{opacity:.5;cursor:default}
+#ai-error-msg{color:#e05050;font-size:12px;margin-top:6px;display:none}
+
+/* ── AI suggest from ingredients ── */
+#suggest-modal .sugg-result{background:#fff;border-radius:14px;padding:16px;margin-top:14px;border:1px solid var(--border);display:none}
+#suggest-modal .sugg-result h3{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px}
+#suggest-modal .sugg-result p{font-size:13px;color:#666;line-height:1.6}
+#suggest-modal .sugg-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* ── Screenshot import modal ── */
+.ss-dropzone{border:2px dashed #ddd;border-radius:14px;padding:24px;text-align:center;cursor:pointer;color:#aaa;transition:border-color .2s}
+.ss-dropzone:hover{border-color:var(--green)}
+.ss-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ss-thumb{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border)}
+
+/* ── Category management modal ── */
+.cat-list-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f5f0e8;gap:10px}
+.cat-list-item span{flex:1;font-size:14px;font-weight:700;color:var(--dark)}
+.cat-list-item .cat-emoji{font-size:20px;width:32px;text-align:center}
+.icon-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;transition:background .2s;color:#aaa}
+.icon-btn:hover{background:#f0f0f0;color:var(--dark)}
+.icon-btn.danger:hover{background:var(--coral);color:#e05050}
+
+/* ── Install banner ── */
+#install-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;border-radius:16px;padding:12px 18px;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.25);align-items:center;gap:12px;max-width:360px;width:calc(100% - 32px)}
+#install-banner.show{display:flex}
+#install-banner p{font-size:13px;line-height:1.4;flex:1}
+#install-banner p strong{display:block;margin-bottom:2px}
+#install-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+#install-dismiss{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;padding:0 2px}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  header{padding:16px 16px 0}
+  .brand h1{font-size:24px}
+  main{padding:16px 12px 80px}
+  .det-hero{height:160px;font-size:60px}
+  .det-title{font-size:20px}
+  .header-actions{gap:4px}
+  .hbtn{padding:7px 10px;font-size:11px}
+}
 </style>
 </head>
 <body>
 
-<!-- ── Install Banner ─────────────────────────────────────────────────────── -->
+<!-- Auth -->
+<div id="auth-screen">
+  <div class="logo">🍽️</div>
+  <h1>Kain</h1>
+  <p class="tagline">Your personal recipe book</p>
+  <button class="google-btn" id="google-signin-btn">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"/>
+    Continue with Google
+  </button>
+  <p id="auth-error" class="hidden"></p>
+</div>
+
+<!-- Loading -->
+<div id="loading-screen" class="hidden">
+  <div class="spinner"></div>
+  <p id="loading-msg">Loading Kain…</p>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Install Banner -->
 <div id="install-banner">
-  <p><strong>📱 Add to Home Screen</strong>Install this app on your phone for quick access!</p>
+  <p><strong>📱 Install Kain</strong>Add to your home screen!</p>
   <button id="install-btn">Install</button>
   <button id="install-dismiss">✕</button>
 </div>
 
-<!-- ── Header ── -->
-<header>
-  <div class="header-top">
-    <div>
-      <h1>🌿 My Recipe Book</h1>
-      <p id="recipe-count">8 recipes · 2 favorites</p>
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="header-top">
+      <div class="brand">
+        <div>
+          <h1>Kain</h1>
+          <div class="version"><span class="save-dot saved" id="save-dot"></span><span id="save-text">Saved</span></div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="hbtn-icon" id="cook-mode-btn" title="Cooking Mode">👨‍🍳</button>
+        <button class="hbtn-icon" id="manage-cats-btn" title="Manage Categories">🗂</button>
+        <button class="hbtn hbtn-ghost" id="signout-btn">Sign out</button>
+      </div>
     </div>
-    <button id="add-btn">+ Add Recipe</button>
-  </div>
-  <div class="search-wrap">
-    <span>🔍</span>
-    <input id="search" type="text" placeholder="Search recipes or ingredients…" />
-  </div>
-  <div id="ing-hint"></div>
-  <div class="view-tabs">
-    <button class="view-tab active" data-view="browse">📖 Browse</button>
-    <button class="view-tab" data-view="favorites">❤️ Favorites</button>
-  </div>
-</header>
+    <div class="search-wrap">
+      <span class="si">🔍</span>
+      <input id="search" type="text" placeholder="Search recipes or ingredients…"/>
+    </div>
+    <div id="ing-hint"></div>
+    <div class="view-tabs">
+      <button class="vtab active" data-view="all">📖 All</button>
+      <button class="vtab" data-view="favorites">❤️ Favorites</button>
+      <button class="vtab" data-view="archived">📦 Archived</button>
+    </div>
+  </header>
 
-<div class="cats-bar">
-  <div class="cats-inner" id="cat-bar"></div>
+  <div class="cats-bar"><div class="cats-inner" id="cat-bar"></div></div>
+
+  <main><div id="grid"></div></main>
+
+  <!-- FAB -->
+  <div id="fab-menu" class="hidden">
+    <div class="fab-item" id="fab-screenshot"><span class="label">Import from Screenshot</span><div class="icon">📸</div></div>
+    <div class="fab-item" id="fab-ai-suggest"><span class="label">Suggest from Ingredients</span><div class="icon">🧠</div></div>
+    <div class="fab-item" id="fab-add-recipe"><span class="label">Add Recipe</span><div class="icon">📝</div></div>
+  </div>
+  <button id="fab">+</button>
 </div>
 
-<main>
-  <div id="grid"></div>
-</main>
+<!-- ══════════════ MODALS ══════════════ -->
 
-<footer>🌿 Made with love · <span id="footer-count">8</span> recipes collected</footer>
-
-<!-- ── Recipe Detail Modal ── -->
+<!-- Detail Modal -->
 <div class="modal-bg" id="detail-modal">
-  <div class="modal">
-    <div class="modal-header-img" id="detail-img">
-      <button class="modal-close" id="detail-close">✕</button>
-      <button class="modal-fav" id="detail-fav"></button>
-      <span id="detail-emoji"></span>
-    </div>
-    <div class="modal-body">
-      <span class="modal-cat-badge" id="detail-cat"></span>
-      <h2 class="modal-title" id="detail-title"></h2>
-      <p class="modal-desc" id="detail-desc"></p>
-      <div class="stats-row" id="detail-stats"></div>
-      <div class="macros-box">
-        <h4>Nutrition Breakdown (per serving)</h4>
-        <div id="detail-macros"></div>
+  <div class="modal-box" style="max-width:620px">
+    <div class="det-hero" id="det-hero">
+      <span id="det-emoji"></span>
+      <img id="det-photo" src="" alt="" style="display:none"/>
+      <div class="det-hero-actions">
+        <button class="fav-btn" id="det-fav-btn">🤍</button>
+        <button id="det-close">✕</button>
       </div>
+    </div>
+    <div class="det-body">
+      <div class="det-cats" id="det-cats"></div>
+      <h2 class="det-title" id="det-title"></h2>
+      <p class="det-desc" id="det-desc"></p>
+      <div class="serving-row">
+        <label>Adjust Servings</label>
+        <div class="serving-ctrl">
+          <button class="srv-btn" id="srv-minus">−</button>
+          <span id="serving-val">2</span>
+          <button class="srv-btn" id="srv-plus">+</button>
+        </div>
+      </div>
+      <div class="stats-row" id="det-stats"></div>
+      <div class="macros-box"><h4>Nutrition (per serving)</h4><div id="det-macros"></div></div>
       <div class="tabs">
-        <button class="tab-btn active" data-tab="ingredients">Ingredients</button>
-        <button class="tab-btn" data-tab="steps">Steps</button>
+        <button class="tabbtn active" data-tab="ingredients">Ingredients</button>
+        <button class="tabbtn" data-tab="steps">Steps</button>
       </div>
       <div class="tab-panel active" id="tab-ingredients"></div>
       <div class="tab-panel" id="tab-steps"></div>
+      <button class="green-btn" id="det-cook-btn">👨‍🍳 Start Cooking Mode</button>
+      <div class="det-actions">
+        <button class="dact-btn dact-edit" id="det-edit-btn">✏️ Edit</button>
+        <button class="dact-btn dact-archive" id="det-archive-btn">📦 Archive</button>
+        <button class="dact-btn dact-delete" id="det-delete-btn">🗑 Delete</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ── Add Recipe Modal ── -->
-<div class="modal-bg" id="add-modal">
-  <div class="add-modal">
-    <div class="add-header">
-      <div class="add-header-row">
-        <h2>Add New Recipe</h2>
-        <button id="add-close">✕</button>
+<!-- Add/Edit Recipe Modal -->
+<div class="modal-bg" id="recipe-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-hdr-row">
+        <h2 id="recipe-modal-title">Add Recipe</h2>
+        <button class="modal-close-btn" id="recipe-modal-close">✕</button>
       </div>
-      <div class="mode-tabs">
-        <button class="mode-tab active" data-mode="ai">✨ Paste Article/Post</button>
-        <button class="mode-tab" data-mode="manual">✏️ Manual Entry</button>
+      <div class="mode-tabs" id="recipe-mode-tabs">
+        <button class="mtab active" data-mode="manual">✏️ Manual</button>
+        <button class="mtab" data-mode="ai">✨ Paste Text</button>
       </div>
     </div>
-    <div class="add-body">
-      <div id="panel-ai">
-        <p class="ai-hint">Paste any recipe article, Facebook post, blog text, or TikTok caption. Claude will extract the recipe automatically!</p>
-        <textarea id="ai-text" placeholder="Paste your recipe article, social media post, or any text here…"></textarea>
-        <p id="ai-error">Couldn't extract recipe. Please check the text or try again.</p>
-        <button class="green-btn" id="ai-extract-btn">✨ Extract Recipe with AI</button>
-      </div>
-      <div id="panel-manual" style="display:none">
-        <label class="field-label">Title</label>
-        <input class="field-input" id="m-title" type="text" />
+    <div class="modal-scroll">
+      <!-- Manual panel -->
+      <div id="panel-manual">
+        <label class="field-label">Recipe Name</label>
+        <input class="field-input" id="m-title" type="text" placeholder="e.g. Adobo sa Gata"/>
+
         <label class="field-label">Description</label>
-        <input class="field-input" id="m-desc" type="text" />
+        <input class="field-input" id="m-desc" type="text" placeholder="Short description…"/>
+
+        <label class="field-label">Categories <span style="font-weight:400;color:#aaa">(pick one or more)</span></label>
+        <div class="cat-checkboxes" id="cat-checkboxes"></div>
+
+        <label class="field-label">Display Image</label>
+        <div class="media-picker">
+          <div class="mp-option active" data-mp="emoji">😊 Emoji</div>
+          <div class="mp-option" data-mp="photo">📷 Photo</div>
+        </div>
+        <div id="emoji-picker-wrap">
+          <input id="emoji-input" type="text" maxlength="2" value="🍽️"/>
+        </div>
+        <div id="photo-upload-wrap">
+          <div class="photo-drop" id="photo-drop">Tap or drag a photo here</div>
+          <input type="file" id="photo-file" accept="image/*" style="display:none"/>
+          <img id="photo-preview" src="" alt="Preview"/>
+        </div>
+
         <div class="row2">
-          <div>
-            <label class="field-label">Category</label>
-            <select class="field-select" id="m-cat">
-              <option>Quick Cook</option><option>Soup</option><option>Korean</option>
-              <option>Japanese</option><option>Western</option><option>Filipino</option>
-              <option>Dessert</option><option>Snack</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Servings</label>
-            <input class="field-input" id="m-servings" type="number" value="2" />
-          </div>
+          <div><label class="field-label">Prep Time</label><input class="field-input" id="m-prep" placeholder="e.g. 10 min"/></div>
+          <div><label class="field-label">Cook Time</label><input class="field-input" id="m-cook" placeholder="e.g. 30 min"/></div>
         </div>
         <div class="row2">
-          <div>
-            <label class="field-label">Prep Time</label>
-            <input class="field-input" id="m-prep" type="text" placeholder="e.g. 15 min" />
-          </div>
-          <div>
-            <label class="field-label">Cook Time</label>
-            <input class="field-input" id="m-cook" type="text" placeholder="e.g. 30 min" />
-          </div>
+          <div><label class="field-label">Servings</label><input class="field-input" id="m-servings" type="number" value="2" min="1"/></div>
+          <div><label class="field-label">Calories/serving</label><input class="field-input" id="m-cal" type="number" value="0"/></div>
         </div>
-        <label class="field-label">Calories (per serving)</label>
-        <input class="field-input" id="m-cal" type="number" value="0" />
-        <label class="field-label">Macros (grams per serving)</label>
-        <div class="macro-row-inputs">
-          <div class="macro-inp-wrap"><div class="mlabel">Protein</div><input type="number" id="m-protein" value="0" /></div>
-          <div class="macro-inp-wrap"><div class="mlabel">Carbs</div><input type="number" id="m-carbs" value="0" /></div>
-          <div class="macro-inp-wrap"><div class="mlabel">Fat</div><input type="number" id="m-fat" value="0" /></div>
-          <div class="macro-inp-wrap"><div class="mlabel">Fiber</div><input type="number" id="m-fiber" value="0" /></div>
+
+        <label class="field-label">Macros per serving (g)</label>
+        <div class="macro-inputs">
+          <div class="mi-wrap"><div class="ml">Protein</div><input type="number" id="m-protein" value="0"/></div>
+          <div class="mi-wrap"><div class="ml">Carbs</div><input type="number" id="m-carbs" value="0"/></div>
+          <div class="mi-wrap"><div class="ml">Fat</div><input type="number" id="m-fat" value="0"/></div>
+          <div class="mi-wrap"><div class="ml">Fiber</div><input type="number" id="m-fiber" value="0"/></div>
         </div>
-        <label class="field-label">Tags (comma-separated)</label>
-        <input class="field-input" id="m-tags" type="text" placeholder="e.g. spicy, comfort, quick" />
-        <div class="section-header">
-          <span>Ingredients</span>
-          <button class="small-add-btn" id="add-ing-btn">+ Add</button>
-        </div>
+
+        <div class="sec-hdr"><span>Ingredients</span><button class="small-btn" id="add-ing-btn">+ Add</button></div>
         <div id="ing-list"></div>
-        <div class="section-header">
-          <span>Steps</span>
-          <button class="small-add-btn" id="add-step-btn">+ Add</button>
-        </div>
+
+        <div class="sec-hdr"><span>Steps</span><button class="small-btn" id="add-step-btn">+ Add</button></div>
         <div id="step-list"></div>
-        <button class="green-btn" id="manual-save-btn">💾 Save Recipe</button>
+
+        <button class="green-btn" id="save-recipe-btn">💾 Save Recipe</button>
+      </div>
+
+      <!-- AI / Paste panel -->
+      <div id="panel-ai" style="display:none">
+        <p style="color:#777;font-size:13px;margin-top:8px;margin-bottom:12px;line-height:1.6">Paste any recipe text, article, or social media post and Claude will extract and fill in all the details automatically.</p>
+        <textarea id="ai-paste-text" style="width:100%;height:180px;border-radius:12px;border:1.5px solid #ddd;padding:12px;font-size:13px;font-family:'Lato',sans-serif;resize:vertical;background:#fff;outline:none" placeholder="Paste recipe text here…"></textarea>
+        <p id="ai-error-msg"></p>
+        <button class="green-btn" id="ai-extract-btn">✨ Extract with AI</button>
       </div>
     </div>
   </div>
 </div>
 
-<script>
-// ── Data ──────────────────────────────────────────────────────────────────────
-const CATEGORIES = ["All","Quick Cook","Soup","Korean","Japanese","Western","Filipino","Dessert","Snack"];
-const CAT_EMOJI  = {All:"🍽️","Quick Cook":"⚡",Soup:"🍲",Korean:"🇰🇷",Japanese:"🇯🇵",Western:"🍴",Filipino:"🇵🇭",Dessert:"🍰",Snack:"🍡"};
+<!-- AI Suggest from Ingredients Modal -->
+<div class="modal-bg" id="suggest-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-hdr-row">
+        <h2>Suggest a Recipe</h2>
+        <button class="modal-close-btn" id="suggest-close">✕</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <p style="color:#777;font-size:13px;margin-top:4px;margin-bottom:12px;line-height:1.6">Type your ingredients below, upload a photo of them, or both! Claude will suggest a recipe you can make.</p>
+      <div class="mode-tabs">
+        <button class="mtab active" data-smode="type">⌨️ Type Ingredients</button>
+        <button class="mtab" data-smode="photo">📷 Upload Photo</button>
+      </div>
+      <div id="s-panel-type">
+        <textarea id="suggest-ing-text" style="width:100%;height:120px;border-radius:12px;border:1.5px solid #ddd;padding:12px;font-size:13px;font-family:'Lato',sans-serif;resize:vertical;background:#fff;outline:none;margin-top:8px" placeholder="e.g. chicken, ginger, soy sauce, garlic…"></textarea>
+      </div>
+      <div id="s-panel-photo" style="display:none;margin-top:8px">
+        <div class="photo-drop" id="suggest-photo-drop">Tap or drag a photo of your ingredients</div>
+        <input type="file" id="suggest-photo-file" accept="image/*" style="display:none"/>
+        <img id="suggest-photo-preview" src="" alt="" style="width:100%;border-radius:10px;margin-top:8px;display:none"/>
+      </div>
+      <button class="green-btn" id="suggest-btn">🧠 Suggest Recipe</button>
+      <div id="sugg-result" style="display:none;background:#fff;border-radius:14px;padding:16px;margin-top:14px;border:1px solid var(--border)">
+        <h3 id="sugg-title" style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px"></h3>
+        <p id="sugg-body" style="font-size:13px;color:#666;line-height:1.7;white-space:pre-wrap"></p>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="dact-btn dact-edit" id="sugg-save-btn" style="flex:1">💾 Save this Recipe</button>
+          <button class="dact-btn dact-archive" id="sugg-another-btn" style="flex:1">🔄 Try Another</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-let recipes = [
-  { id:1, title:"Kimchi Jjigae", category:"Korean", image:"🥘", description:"A hearty, spicy Korean kimchi stew with tofu and pork belly.", prepTime:"10 min", cookTime:"25 min", servings:2, calories:320, macros:{protein:22,carbs:18,fat:16,fiber:4}, tags:["spicy","comfort","fermented"], favorite:true,
-    ingredients:[{amount:200,unit:"g",name:"aged kimchi"},{amount:150,unit:"g",name:"pork belly, sliced"},{amount:300,unit:"g",name:"soft tofu, cubed"},{amount:500,unit:"ml",name:"water or anchovy broth"},{amount:1,unit:"tbsp",name:"gochugaru (Korean chili flakes)"},{amount:1,unit:"tbsp",name:"soy sauce"},{amount:1,unit:"tsp",name:"sesame oil"},{amount:2,unit:"stalks",name:"green onion, chopped"}],
-    steps:["In a pot over medium heat, sauté pork belly until lightly browned, about 3–4 minutes.","Add kimchi and gochugaru. Stir and cook for 2 minutes until fragrant.","Pour in 500 ml of water or broth. Bring to a boil.","Add soy sauce and tofu. Reduce heat and simmer for 15 minutes.","Drizzle with sesame oil, top with green onion, and serve hot with rice."]},
-  { id:2, title:"Sinigang na Baboy", category:"Filipino", image:"🍲", description:"Classic Filipino sour tamarind pork soup with vegetables.", prepTime:"15 min", cookTime:"45 min", servings:4, calories:280, macros:{protein:26,carbs:14,fat:12,fiber:5}, tags:["sour","soup","comfort"], favorite:false,
-    ingredients:[{amount:500,unit:"g",name:"pork ribs or belly"},{amount:1,unit:"liter",name:"water"},{amount:1,unit:"packet",name:"sinigang mix (tamarind base)"},{amount:2,unit:"medium",name:"tomatoes, quartered"},{amount:1,unit:"medium",name:"onion, quartered"},{amount:200,unit:"g",name:"kangkong (water spinach)"},{amount:150,unit:"g",name:"long beans, cut into 2-inch pieces"},{amount:2,unit:"pcs",name:"radish, sliced"},{amount:2,unit:"tsp",name:"fish sauce (patis)"}],
-    steps:["Boil 1 liter of water. Add pork ribs and blanch for 5 minutes. Drain and rinse.","In a fresh pot, add pork, onion, and tomatoes. Cover with 1 liter of water and bring to a boil.","Lower heat and simmer for 30 minutes until pork is tender.","Stir in sinigang mix and radish. Cook 5 more minutes.","Add long beans and cook 3 minutes. Add kangkong last and cook 1 minute.","Season with fish sauce. Serve hot with steamed rice."]},
-  { id:3, title:"Matcha Lava Cake", category:"Dessert", image:"🍰", description:"Molten matcha chocolate cake with a gooey green tea center.", prepTime:"15 min", cookTime:"12 min", servings:4, calories:410, macros:{protein:8,carbs:48,fat:22,fiber:2}, tags:["sweet","matcha","baked"], favorite:true,
-    ingredients:[{amount:100,unit:"g",name:"white chocolate, chopped"},{amount:80,unit:"g",name:"unsalted butter"},{amount:2,unit:"tbsp",name:"matcha powder"},{amount:3,unit:"pcs",name:"eggs"},{amount:3,unit:"tbsp",name:"sugar"},{amount:3,unit:"tbsp",name:"all-purpose flour"},{amount:1,unit:"tsp",name:"vanilla extract"},{amount:1,unit:"pinch",name:"salt"}],
-    steps:["Preheat oven to 200°C (390°F). Grease 4 ramekins with butter.","Melt white chocolate and butter together in a bowl over simmering water. Let cool slightly.","Whisk in matcha powder until smooth.","Beat eggs, sugar, and vanilla until pale. Fold into the chocolate mixture.","Sift in flour and salt. Mix until just combined.","Pour into ramekins. Bake 11–12 minutes — edges should be set, center still jiggly.","Let rest 1 minute, then invert onto plates. Dust with extra matcha. Serve immediately."]},
-  { id:4, title:"Gyoza (Pan-Fried Dumplings)", category:"Japanese", image:"🥟", description:"Crispy-bottomed Japanese dumplings with juicy pork filling.", prepTime:"30 min", cookTime:"15 min", servings:4, calories:340, macros:{protein:18,carbs:34,fat:14,fiber:2}, tags:["crispy","dumplings","snack"], favorite:false,
-    ingredients:[{amount:24,unit:"pcs",name:"gyoza wrappers"},{amount:250,unit:"g",name:"ground pork"},{amount:150,unit:"g",name:"napa cabbage, finely chopped"},{amount:2,unit:"stalks",name:"green onion, minced"},{amount:1,unit:"tbsp",name:"soy sauce"},{amount:1,unit:"tbsp",name:"sesame oil"},{amount:1,unit:"tsp",name:"fresh ginger, grated"},{amount:2,unit:"cloves",name:"garlic, minced"},{amount:3,unit:"tbsp",name:"vegetable oil (for frying)"},{amount:60,unit:"ml",name:"water (for steaming)"}],
-    steps:["Salt cabbage lightly, let sit 5 minutes, then squeeze out moisture.","Mix cabbage with pork, green onion, soy sauce, sesame oil, ginger, and garlic.","Place 1 tsp filling in each wrapper. Fold and pleat the edges to seal.","Heat oil in a pan over medium-high. Add gyoza flat-side down. Cook 2 minutes until golden.","Pour in 60 ml water and immediately cover. Steam for 6 minutes.","Remove lid and cook 1 more minute until bottoms are crisp again.","Serve with soy sauce mixed with rice vinegar for dipping."]},
-  { id:5, title:"Creamy Mushroom Pasta", category:"Western", image:"🍝", description:"Rich and earthy mushroom pasta in a garlic cream sauce.", prepTime:"10 min", cookTime:"20 min", servings:2, calories:520, macros:{protein:16,carbs:62,fat:24,fiber:4}, tags:["pasta","creamy","quick"], favorite:false,
-    ingredients:[{amount:200,unit:"g",name:"fettuccine or spaghetti"},{amount:250,unit:"g",name:"mixed mushrooms, sliced"},{amount:200,unit:"ml",name:"heavy cream"},{amount:3,unit:"cloves",name:"garlic, minced"},{amount:30,unit:"g",name:"parmesan, grated"},{amount:2,unit:"tbsp",name:"butter"},{amount:1,unit:"tbsp",name:"olive oil"},{amount:1,unit:"tsp",name:"dried thyme"},{amount:1,unit:"tsp",name:"salt"},{amount:0.5,unit:"tsp",name:"black pepper"}],
-    steps:["Cook pasta according to package directions. Reserve ½ cup pasta water. Drain.","Heat olive oil and butter in a pan over medium-high. Add mushrooms. Do not stir for 2 minutes — let them brown.","Stir and cook 2 more minutes. Add garlic and thyme. Cook 1 minute.","Pour in cream. Simmer 3–4 minutes until slightly thickened.","Add pasta and toss. Add pasta water if too thick.","Stir in parmesan. Season with salt and pepper. Serve immediately."]},
-  { id:6, title:"Tom Yum Soup", category:"Soup", image:"🍜", description:"Fragrant Thai hot and sour soup with shrimp and lemongrass.", prepTime:"10 min", cookTime:"20 min", servings:2, calories:180, macros:{protein:20,carbs:10,fat:6,fiber:2}, tags:["spicy","sour","thai","soup"], favorite:false,
-    ingredients:[{amount:700,unit:"ml",name:"chicken or shrimp stock"},{amount:200,unit:"g",name:"shrimp, peeled and deveined"},{amount:2,unit:"stalks",name:"lemongrass, bruised and cut"},{amount:3,unit:"slices",name:"galangal (or ginger)"},{amount:4,unit:"pcs",name:"kaffir lime leaves"},{amount:150,unit:"g",name:"mushrooms, halved"},{amount:2,unit:"tbsp",name:"fish sauce"},{amount:2,unit:"tbsp",name:"lime juice"},{amount:2,unit:"pcs",name:"Thai chilies, smashed"},{amount:1,unit:"tbsp",name:"tom yum paste"}],
-    steps:["Bring stock to a boil. Add lemongrass, galangal, and lime leaves.","Stir in tom yum paste and chilies. Simmer 5 minutes.","Add mushrooms and cook 3 minutes.","Add shrimp and cook 2–3 minutes until pink.","Season with fish sauce and lime juice. Taste and adjust sourness.","Remove aromatics before serving. Garnish with cilantro."]},
-  { id:7, title:"Onigiri (Rice Balls)", category:"Snack", image:"🍙", description:"Japanese rice triangles with a savory salmon filling, wrapped in nori.", prepTime:"20 min", cookTime:"0 min", servings:4, calories:210, macros:{protein:10,carbs:38,fat:4,fiber:1}, tags:["japanese","snack","rice"], favorite:false,
-    ingredients:[{amount:2,unit:"cups",name:"cooked Japanese short-grain rice (warm)"},{amount:100,unit:"g",name:"canned salmon, drained and flaked"},{amount:1,unit:"tbsp",name:"mayonnaise"},{amount:1,unit:"tsp",name:"soy sauce"},{amount:4,unit:"sheets",name:"nori, cut into strips"},{amount:1,unit:"tsp",name:"salt (for hands)"}],
-    steps:["Mix flaked salmon with mayo and soy sauce. Set aside.","Wet your hands with water and rub with a pinch of salt.","Take about ½ cup of rice, press flat in your palm.","Place 1 tbsp of salmon filling in the center.","Fold rice around filling and press firmly into a triangle shape.","Wrap base with a strip of nori. Serve immediately or wrap in plastic for later."]},
-  { id:8, title:"Tinolang Manok", category:"Quick Cook", image:"🍗", description:"Light Filipino ginger chicken soup — simple, warming, and nutritious.", prepTime:"10 min", cookTime:"30 min", servings:4, calories:240, macros:{protein:28,carbs:12,fat:8,fiber:3}, tags:["soup","chicken","filipino","light"], favorite:false,
-    ingredients:[{amount:600,unit:"g",name:"chicken, cut into pieces"},{amount:1,unit:"liter",name:"water"},{amount:1,unit:"thumb",name:"fresh ginger, sliced"},{amount:1,unit:"medium",name:"onion, chopped"},{amount:3,unit:"cloves",name:"garlic, minced"},{amount:1,unit:"medium",name:"green papaya or chayote, cubed"},{amount:100,unit:"g",name:"malunggay leaves (moringa) or spinach"},{amount:2,unit:"tbsp",name:"fish sauce (patis)"},{amount:1,unit:"tbsp",name:"vegetable oil"}],
-    steps:["Heat oil in a pot. Sauté garlic, onion, and ginger until fragrant.","Add chicken pieces. Sear 3–4 minutes until lightly browned.","Pour in water. Bring to a boil, then skim off any foam.","Lower heat and simmer 20 minutes until chicken is cooked through.","Add papaya or chayote. Cook 8 minutes until tender.","Season with fish sauce. Add malunggay leaves, turn off heat. Serve hot."]}
-];
+<!-- Screenshot Import Modal -->
+<div class="modal-bg" id="screenshot-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-hdr-row">
+        <h2>Import from Screenshot</h2>
+        <button class="modal-close-btn" id="screenshot-close">✕</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <p style="color:#777;font-size:13px;margin-top:4px;margin-bottom:14px;line-height:1.6">Upload one or more screenshots of a recipe. Claude will read them all and convert it into a saved recipe.</p>
+      <div class="ss-dropzone" id="ss-drop">📷 Tap or drag screenshots here<br/><span style="font-size:11px;margin-top:4px;display:block">Multiple images supported</span></div>
+      <input type="file" id="ss-files" accept="image/*" multiple style="display:none"/>
+      <div class="ss-thumbs" id="ss-thumbs"></div>
+      <button class="green-btn" id="ss-extract-btn" style="display:none">🔍 Extract Recipe</button>
+      <div id="ss-result" style="display:none;background:#fff;border-radius:14px;padding:16px;margin-top:14px;border:1px solid var(--border)">
+        <h3 id="ss-result-title" style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:8px"></h3>
+        <p id="ss-result-body" style="font-size:13px;color:#666;line-height:1.7;white-space:pre-wrap"></p>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="dact-btn dact-edit" id="ss-save-btn" style="flex:1">💾 Save Recipe</button>
+          <button class="dact-btn dact-delete" id="ss-discard-btn" style="flex:1">✕ Discard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let activeCategory = "All", activeView = "browse", searchQuery = "", currentRecipeId = null;
+<!-- Manage Categories Modal -->
+<div class="modal-bg" id="cats-modal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-hdr">
+      <div class="modal-hdr-row">
+        <h2>Manage Categories</h2>
+        <button class="modal-close-btn" id="cats-close">✕</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <div id="cat-list-items"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <input class="field-input" id="new-cat-emoji" type="text" maxlength="2" style="width:54px;text-align:center;font-size:18px" placeholder="🍜"/>
+        <input class="field-input" id="new-cat-name" type="text" placeholder="New category name" style="flex:1"/>
+        <button class="small-btn" id="add-cat-btn" style="padding:0 16px">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-// ── PWA: Service Worker + Install Prompt ─────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+<!-- Cooking Mode -->
+<div id="cook-mode">
+  <button id="cm-exit-btn" style="position:absolute;top:16px;right:16px;background:rgba(255,100,100,.2);color:#ff8888;font-size:13px;padding:10px 16px;border-radius:10px;border:none;cursor:pointer">✕ Exit</button>
+  <h2 class="cm-title" id="cm-title"></h2>
+  <div id="cm-steps-wrap" style="padding-bottom:100px"></div>
+  <div style="position:fixed;bottom:0;left:0;right:0;background:rgba(30,30,30,.95);padding:16px 24px;display:flex;gap:12px;backdrop-filter:blur(8px)">
+    <button class="cm-btn cm-prev" id="cm-prev">← Prev</button>
+    <button class="cm-btn cm-next" id="cm-next">Next →</button>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,signInWithPopup,GoogleAuthProvider,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getFirestore,collection,doc,getDocs,setDoc,deleteDoc,onSnapshot,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+// Storage import removed — photos stored as base64 in Firestore instead
+
+// ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ───────────────────────────────────────────────────────────────────────────
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+// No Firebase Storage needed — photos are stored as base64 strings in Firestore
+
+// ── State ──────────────────────────────────────────────────────────────────
+let recipes    = {};
+let categories = {};
+let user       = null;
+let activeView = 'all';
+let activeCat  = 'all';
+let searchQ    = '';
+let fabOpen    = false;
+let currentId  = null;
+let editingId  = null;
+let baseServings = 2;
+let curServings  = 2;
+let cookStepIdx  = 0;
+let cookSteps    = [];
+let mediaMode    = 'emoji';
+let pendingPhotoFile = null;
+let pendingPhotoDataUrl = null;
+let suggestLastRaw = null;
+let ssImages   = [];
+let ssLastRaw  = null;
+let wakeLock   = null;
+let suggestPhotoDataUrl = null;
+
+// ── Screens ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function showScreen(s){
+  $('auth-screen').style.display    = s==='auth'    ? 'flex'  : 'none';
+  $('loading-screen').classList.toggle('hidden', s!=='loading');
+  $('app').style.display            = s==='app'     ? 'block' : 'none';
 }
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('install-banner').classList.add('show');
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ── Save indicator ─────────────────────────────────────────────────────────
+function setSave(s){
+  const d=$('save-dot'),tx=$('save-text');
+  d.className='save-dot '+s;
+  tx.textContent=s==='saving'?'Saving…':s==='error'?'Error':'Saved';
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+$('google-signin-btn').addEventListener('click',async()=>{
+  try{
+    const provider=new GoogleAuthProvider();
+    await signInWithPopup(auth,provider);
+  }catch(e){
+    $('auth-error').textContent='Sign-in failed. Please try again.';
+    $('auth-error').classList.remove('hidden');
+  }
 });
-document.getElementById('install-btn').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  document.getElementById('install-banner').classList.remove('show');
-});
-document.getElementById('install-dismiss').addEventListener('click', () => {
-  document.getElementById('install-banner').classList.remove('show');
-});
-window.addEventListener('appinstalled', () => {
-  document.getElementById('install-banner').classList.remove('show');
+$('signout-btn').addEventListener('click',()=>signOut(auth));
+
+onAuthStateChanged(auth,async u=>{
+  if(u){
+    user=u; showScreen('loading');
+    $('loading-msg').textContent='Loading your recipes…';
+    await loadData();
+    showScreen('app');
+  } else {
+    user=null; showScreen('auth');
+  }
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function updateCounts() {
-  const fav = recipes.filter(r => r.favorite).length;
-  document.getElementById("recipe-count").textContent = `${recipes.length} recipes · ${fav} favorites`;
-  document.getElementById("footer-count").textContent = recipes.length;
+// ── Firestore paths ────────────────────────────────────────────────────────
+const recipesColl  = () => collection(db,`users/${user.uid}/recipes`);
+const catsColl     = () => collection(db,`users/${user.uid}/categories`);
+const recipeDoc    = id => doc(db,`users/${user.uid}/recipes/${id}`);
+const catDoc       = id => doc(db,`users/${user.uid}/categories/${id}`);
+
+// ── Load data ──────────────────────────────────────────────────────────────
+async function loadData(){
+  const [rSnap,cSnap]=await Promise.all([getDocs(recipesColl()),getDocs(catsColl())]);
+  recipes={};
+  rSnap.forEach(d=>recipes[d.id]={...d.data(),id:d.id});
+  categories={};
+  cSnap.forEach(d=>categories[d.id]={...d.data(),id:d.id});
+  if(!Object.keys(categories).length) await seedCategories();
+  renderCatBar(); renderGrid();
 }
-function getFiltered() {
-  return recipes.filter(r => {
-    if (activeCategory !== "All" && r.category !== activeCategory) return false;
-    if (activeView === "favorites" && !r.favorite) return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q) ||
-           r.category.toLowerCase().includes(q) || (r.tags||[]).some(t=>t.toLowerCase().includes(q)) ||
-           r.ingredients.some(i=>i.name.toLowerCase().includes(q));
+
+async function seedCategories(){
+  const defaults=[
+    {id:'quick',name:'Quick Cook',emoji:'⚡'},
+    {id:'soup',name:'Soup',emoji:'🍲'},
+    {id:'filipino',name:'Filipino',emoji:'🇵🇭'},
+    {id:'korean',name:'Korean',emoji:'🇰🇷'},
+    {id:'japanese',name:'Japanese',emoji:'🇯🇵'},
+    {id:'western',name:'Western',emoji:'🍴'},
+    {id:'dessert',name:'Dessert',emoji:'🍰'},
+    {id:'snack',name:'Snack',emoji:'🍡'},
+  ];
+  const batch=writeBatch(db);
+  defaults.forEach(c=>{batch.set(catDoc(c.id),c);categories[c.id]=c;});
+  await batch.commit();
+}
+
+// ── Save recipe ────────────────────────────────────────────────────────────
+async function saveRecipe(data){
+  setSave('saving');
+  try{
+    const id=data.id||Date.now().toString();
+    await setDoc(recipeDoc(id),{...data,id});
+    recipes[id]={...data,id};
+    setSave('saved'); renderGrid(); return id;
+  }catch(e){setSave('error');toast('❌ Save failed');throw e;}
+}
+
+async function deleteRecipe(id){
+  try{
+    await deleteDoc(recipeDoc(id));
+    delete recipes[id];
+    renderGrid(); toast('🗑 Recipe deleted');
+  }catch(e){toast('❌ Delete failed');}
+}
+
+// ── Save category ──────────────────────────────────────────────────────────
+async function saveCat(data){
+  setSave('saving');
+  try{
+    const id=data.id||Date.now().toString();
+    await setDoc(catDoc(id),{...data,id});
+    categories[id]={...data,id};
+    setSave('saved'); renderCatBar(); renderCatCheckboxes(); renderCatList();
+  }catch(e){setSave('error');toast('❌ Failed to save category');}
+}
+async function deleteCat(id){
+  await deleteDoc(catDoc(id));
+  delete categories[id];
+  // Remove from recipes
+  Object.values(recipes).forEach(r=>{
+    if((r.categories||[]).includes(id)){
+      r.categories=r.categories.filter(c=>c!==id);
+      setDoc(recipeDoc(r.id),r);
+    }
+  });
+  renderCatBar(); renderCatCheckboxes(); renderCatList(); renderGrid();
+}
+
+// ── "Upload" photo — compress and store as base64 in Firestore ────────────
+async function uploadPhoto(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      // Compress via canvas to keep it under Firestore 1MB doc limit
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 600; // max width/height px
+        let w = img.width, h = img.height;
+        if(w > MAX || h > MAX){
+          if(w > h){ h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function renderGrid() {
-  const grid = document.getElementById("grid");
-  const list = getFiltered();
-  if (!list.length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🍽️</div><p>${activeView==="favorites"?"Heart some recipes first!":"No recipes found."}</p></div>`;
+// ── Render grid ────────────────────────────────────────────────────────────
+function getFiltered(){
+  return Object.values(recipes).filter(r=>{
+    if(activeView==='favorites' && !r.favorite) return false;
+    if(activeView==='archived' && !r.archived) return false;
+    if(activeView==='all' && r.archived) return false;
+    if(activeCat!=='all' && !(r.categories||[]).includes(activeCat)) return false;
+    if(!searchQ.trim()) return true;
+    const q=searchQ.toLowerCase();
+    return r.title?.toLowerCase().includes(q)||
+           r.description?.toLowerCase().includes(q)||
+           (r.ingredients||[]).some(i=>i.name?.toLowerCase().includes(q))||
+           (r.categories||[]).some(cid=>categories[cid]?.name?.toLowerCase().includes(q));
+  });
+}
+
+function renderGrid(){
+  const g=$('grid'), list=getFiltered();
+  const total=Object.values(recipes).filter(r=>!r.archived).length;
+  const favs=Object.values(recipes).filter(r=>r.favorite).length;
+  if(!list.length){
+    g.innerHTML=`<div class="empty-state"><div class="ei">🍽️</div><p style="font-size:15px">${activeView==='favorites'?'Heart some recipes!':activeView==='archived'?'No archived recipes.':'No recipes yet — tap + to add one!'}</p></div>`;
     return;
   }
-  grid.innerHTML = list.map(r => `
-    <div class="card" data-id="${r.id}">
-      <div class="card-img">${r.image}</div>
-      <button class="card-fav${r.favorite?" active":""}" data-fav="${r.id}">${r.favorite?"❤️":"🤍"}</button>
-      <span class="card-cat">${r.category}</span>
-      <div class="card-body">
-        <h3>${r.title}</h3><p>${r.description}</p>
-        <div class="card-meta"><span>⏱ ${r.prepTime}</span><span>🔥 ${r.cookTime}</span><span>👥 ${r.servings}</span></div>
-        <span class="kcal-pill">🔥 ${r.calories} kcal</span>
+  g.innerHTML=list.map(r=>{
+    const cats=(r.categories||[]).map(cid=>categories[cid]).filter(Boolean);
+    const media=r.photoUrl
+      ?`<img src="${r.photoUrl}" alt="${r.title}" style="width:100%;height:100%;object-fit:cover"/>`
+      :`<span>${r.emoji||'🍽️'}</span>`;
+    return`<div class="card" data-id="${r.id}">
+      <div class="card-media">${media}
+        <button class="card-fav${r.favorite?' on':''}" data-fav="${r.id}">${r.favorite?'❤️':'🤍'}</button>
+        ${r.archived?'<span class="card-archived">ARCHIVED</span>':''}
       </div>
-    </div>`).join("");
-  const hintEl = document.getElementById("ing-hint");
-  if (searchQuery.trim().length >= 2) {
-    const q = searchQuery.toLowerCase();
-    const m = recipes.filter(r=>r.ingredients.some(i=>i.name.toLowerCase().includes(q))&&!r.title.toLowerCase().includes(q)).slice(0,3);
-    hintEl.style.display = m.length ? "block" : "none";
-    if (m.length) hintEl.textContent = "🥄 Ingredient match: " + m.map(r=>r.title).join(", ");
-  } else { hintEl.style.display = "none"; }
-  updateCounts();
-}
-function renderCatBar() {
-  document.getElementById("cat-bar").innerHTML = CATEGORIES.map(c =>
-    `<button class="cat-btn${c===activeCategory?" active":""}" data-cat="${c}">${CAT_EMOJI[c]} ${c}</button>`).join("");
-}
-
-// ── Detail Modal ──────────────────────────────────────────────────────────────
-function macroBar(label, val, max, color) {
-  return `<div class="macro-row"><div class="macro-row-top"><span>${label}</span><span>${val}g</span></div><div class="macro-track"><div class="macro-fill" style="width:${Math.min(val/max*100,100)}%;background:${color}"></div></div></div>`;
-}
-function openDetail(id) {
-  const r = recipes.find(x=>x.id===id); if(!r) return;
-  currentRecipeId = id;
-  document.getElementById("detail-emoji").textContent = r.image;
-  document.getElementById("detail-cat").textContent   = r.category;
-  document.getElementById("detail-title").textContent = r.title;
-  document.getElementById("detail-desc").textContent  = r.description;
-  const fb = document.getElementById("detail-fav");
-  fb.textContent = r.favorite?"❤️":"🤍"; fb.className = "modal-fav"+(r.favorite?" active":"");
-  document.getElementById("detail-stats").innerHTML =
-    [["⏱","Prep",r.prepTime],["🔥","Cook",r.cookTime],["👥","Serves",r.servings]].map(([ic,lb,vl])=>
-      `<div class="stat-box"><div class="s-icon">${ic}</div><div class="s-label">${lb}</div><div class="s-val">${vl}</div></div>`).join("")+
-    `<div class="stat-box kcal"><div class="s-icon">🔥</div><div class="s-label">Calories</div><div class="s-val">${r.calories}</div></div>`;
-  document.getElementById("detail-macros").innerHTML =
-    macroBar("Protein",r.macros.protein,60,"#86A788")+macroBar("Carbs",r.macros.carbs,100,"#FFCFCF")+
-    macroBar("Fat",r.macros.fat,50,"#FFE2E2")+macroBar("Fiber",r.macros.fiber,20,"#b5d4b7");
-  document.getElementById("tab-ingredients").innerHTML =
-    r.ingredients.map(i=>`<div class="ing-item"><div class="ing-dot"></div><span class="ing-amt">${i.amount} ${i.unit}</span><span class="ing-name">${i.name}</span></div>`).join("");
-  document.getElementById("tab-steps").innerHTML =
-    r.steps.map((s,i)=>`<div class="step-item"><div class="step-num">${i+1}</div><p class="step-text">${s}</p></div>`).join("");
-  setActiveTab("ingredients");
-  document.getElementById("detail-modal").classList.add("open");
-}
-function setActiveTab(tab) {
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab));
+      <div class="card-body">
+        <div class="card-cats">${cats.map(c=>`<span class="card-cat-tag">${c.emoji||''} ${c.name}</span>`).join('')}</div>
+        <h3>${r.title||'Untitled'}</h3>
+        <p>${r.description||''}</p>
+        <div class="card-meta"><span>⏱ ${r.prepTime||'—'}</span><span>🔥 ${r.cookTime||'—'}</span><span>👥 ${r.servings||1}</span></div>
+        ${r.calories?`<span class="kcal-pill">🔥 ${r.calories} kcal</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  // ing hint
+  if(searchQ.trim().length>=2){
+    const q=searchQ.toLowerCase();
+    const matches=Object.values(recipes).filter(r=>!r.archived&&(r.ingredients||[]).some(i=>i.name?.toLowerCase().includes(q))&&!r.title?.toLowerCase().includes(q)).slice(0,3);
+    const h=$('ing-hint');
+    h.style.display=matches.length?'block':'none';
+    if(matches.length) h.textContent='🥄 Ingredient match: '+matches.map(r=>r.title).join(', ');
+  } else { $('ing-hint').style.display='none'; }
 }
 
-// ── Add Modal ─────────────────────────────────────────────────────────────────
-let activeMode = "ai";
-function setMode(mode) {
-  activeMode = mode;
-  document.querySelectorAll(".mode-tab").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
-  document.getElementById("panel-ai").style.display     = mode==="ai"?"block":"none";
-  document.getElementById("panel-manual").style.display = mode==="manual"?"block":"none";
-}
-function buildIngRow() {
-  const d = document.createElement("div"); d.className = "ing-row";
-  d.innerHTML = `<input data-role="amount" type="number" placeholder="Amt" /><select>${["g","kg","ml","liter","cups","tbsp","tsp","pcs","cloves","slices","stalks","medium","large","pinch"].map(u=>`<option>${u}</option>`).join("")}</select><input data-role="name" type="text" placeholder="Ingredient name" />`;
-  return d;
-}
-function buildStepRow(num) {
-  const d = document.createElement("div"); d.className = "step-row";
-  d.innerHTML = `<div class="step-circle">${num}</div><textarea placeholder="Step ${num}…"></textarea>`;
-  return d;
-}
-function resetManualForm() {
-  ["m-title","m-desc","m-prep","m-cook","m-tags"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("m-servings").value=2; document.getElementById("m-cal").value=0;
-  ["m-protein","m-carbs","m-fat","m-fiber"].forEach(id=>document.getElementById(id).value=0);
-  const il=document.getElementById("ing-list"); const sl=document.getElementById("step-list");
-  il.innerHTML=""; sl.innerHTML=""; il.appendChild(buildIngRow()); sl.appendChild(buildStepRow(1));
-}
-function collectManualRecipe() {
-  const ings=[]; document.querySelectorAll("#ing-list .ing-row").forEach(row=>{
-    const name=row.querySelector("[data-role='name']").value;
-    if(name.trim()) ings.push({amount:parseFloat(row.querySelector("[data-role='amount']").value)||0,unit:row.querySelector("select").value,name});
-  });
-  const steps=[]; document.querySelectorAll("#step-list textarea").forEach(ta=>{if(ta.value.trim())steps.push(ta.value.trim());});
-  return { id:Date.now(), favorite:false, image:"🍽️",
-    title:document.getElementById("m-title").value, category:document.getElementById("m-cat").value,
-    description:document.getElementById("m-desc").value, prepTime:document.getElementById("m-prep").value,
-    cookTime:document.getElementById("m-cook").value, servings:parseInt(document.getElementById("m-servings").value)||2,
-    calories:parseInt(document.getElementById("m-cal").value)||0,
-    macros:{protein:parseInt(document.getElementById("m-protein").value)||0,carbs:parseInt(document.getElementById("m-carbs").value)||0,fat:parseInt(document.getElementById("m-fat").value)||0,fiber:parseInt(document.getElementById("m-fiber").value)||0},
-    tags:document.getElementById("m-tags").value.split(",").map(t=>t.trim()).filter(Boolean), ingredients:ings, steps };
-}
-async function extractRecipeWithAI(text) {
-  const sys=`You are a recipe extraction assistant. Return ONLY valid JSON, no markdown:\n{"title":"","category":"Quick Cook|Soup|Korean|Japanese|Western|Filipino|Dessert|Snack","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"tags":[],"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}`;
-  const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages:[{role:"user",content:`Extract recipe:\n\n${text}`}]})});
-  const data=await resp.json();
-  return JSON.parse(data.content.map(b=>b.text||"").join("").replace(/```json|```/g,"").trim());
+// ── Render cat bar ─────────────────────────────────────────────────────────
+function renderCatBar(){
+  const bar=$('cat-bar');
+  const cats=[{id:'all',name:'All',emoji:'🍽️'},...Object.values(categories)];
+  bar.innerHTML=cats.map(c=>`<button class="cat-pill${activeCat===c.id?' active':''}" data-catid="${c.id}">${c.emoji||''} ${c.name}</button>`).join('');
 }
 
-// ── Events ────────────────────────────────────────────────────────────────────
-document.addEventListener("click", e => {
-  const card=e.target.closest(".card");
-  if(card&&!e.target.closest(".card-fav")){openDetail(parseInt(card.dataset.id));return;}
-  const fav=e.target.closest(".card-fav");
-  if(fav){recipes=recipes.map(r=>r.id===parseInt(fav.dataset.fav)?{...r,favorite:!r.favorite}:r);renderGrid();return;}
-  const cat=e.target.closest(".cat-btn");
-  if(cat){activeCategory=cat.dataset.cat;renderCatBar();renderGrid();return;}
-  const vt=e.target.closest(".view-tab");
-  if(vt){activeView=vt.dataset.view;document.querySelectorAll(".view-tab").forEach(b=>b.classList.toggle("active",b.dataset.view===activeView));renderGrid();return;}
-  if(e.target===document.getElementById("detail-modal")||e.target.id==="detail-close"){document.getElementById("detail-modal").classList.remove("open");return;}
-  if(e.target.id==="detail-fav"){recipes=recipes.map(r=>r.id===currentRecipeId?{...r,favorite:!r.favorite}:r);const r=recipes.find(x=>x.id===currentRecipeId);e.target.textContent=r.favorite?"❤️":"🤍";e.target.className="modal-fav"+(r.favorite?" active":"");renderGrid();return;}
-  const tb=e.target.closest(".tab-btn");
-  if(tb){setActiveTab(tb.dataset.tab);return;}
-  if(e.target.id==="add-btn"){setMode("ai");document.getElementById("ai-text").value="";document.getElementById("ai-error").style.display="none";document.getElementById("ai-extract-btn").disabled=false;document.getElementById("ai-extract-btn").textContent="✨ Extract Recipe with AI";resetManualForm();document.getElementById("add-modal").classList.add("open");return;}
-  if(e.target===document.getElementById("add-modal")||e.target.id==="add-close"){document.getElementById("add-modal").classList.remove("open");return;}
-  const mt=e.target.closest(".mode-tab");
-  if(mt){setMode(mt.dataset.mode);return;}
-  if(e.target.id==="add-ing-btn"){document.getElementById("ing-list").appendChild(buildIngRow());return;}
-  if(e.target.id==="add-step-btn"){const l=document.getElementById("step-list");l.appendChild(buildStepRow(l.children.length+1));return;}
-  if(e.target.id==="manual-save-btn"){recipes.unshift(collectManualRecipe());renderGrid();document.getElementById("add-modal").classList.remove("open");return;}
-  if(e.target.id==="ai-extract-btn"){
-    const text=document.getElementById("ai-text").value.trim(); if(!text)return;
-    const btn=document.getElementById("ai-extract-btn"),errEl=document.getElementById("ai-error");
-    btn.disabled=true;btn.textContent="✨ Extracting recipe…";errEl.style.display="none";
-    extractRecipeWithAI(text).then(ex=>{recipes.unshift({...ex,id:Date.now(),favorite:false,image:"🍽️"});renderGrid();document.getElementById("add-modal").classList.remove("open");})
-    .catch(()=>{errEl.style.display="block";btn.disabled=false;btn.textContent="✨ Extract Recipe with AI";});return;}
+// ── Detail modal ───────────────────────────────────────────────────────────
+function mBar(label,val,max,color){
+  const pct=Math.min(val/max*100,100);
+  return`<div class="mrow"><div class="mrow-top"><span>${label}</span><span>${val}g</span></div><div class="mtrack"><div class="mfill" style="width:${pct}%;background:${color}"></div></div></div>`;
+}
+
+function openDetail(id){
+  const r=recipes[id]; if(!r) return;
+  currentId=id; baseServings=r.servings||2; curServings=baseServings;
+  // hero
+  const hero=$('det-hero');
+  const emoji=$('det-emoji'), photo=$('det-photo');
+  if(r.photoUrl){ emoji.style.display='none'; photo.style.display='block'; photo.src=r.photoUrl; }
+  else { emoji.style.display=''; photo.style.display='none'; emoji.textContent=r.emoji||'🍽️'; }
+  const fb=$('det-fav-btn');
+  fb.textContent=r.favorite?'❤️':'🤍'; fb.className='fav-btn'+(r.favorite?' on':'');
+  const cats=(r.categories||[]).map(cid=>categories[cid]).filter(Boolean);
+  $('det-cats').innerHTML=cats.map(c=>`<span class="det-cat-tag">${c.emoji||''} ${c.name}</span>`).join('');
+  $('det-title').textContent=r.title||'Untitled';
+  $('det-desc').textContent=r.description||'';
+  $('serving-val').textContent=curServings;
+  $('det-archive-btn').textContent=r.archived?'📤 Unarchive':'📦 Archive';
+  renderIngredients(r, curServings);
+  $('det-stats').innerHTML=[['⏱','Prep',r.prepTime||'—'],['🔥','Cook',r.cookTime||'—'],['👥','Serves',r.servings||'—']].map(([ic,lb,vl])=>
+    `<div class="stat-box"><div class="si">${ic}</div><div class="sl">${lb}</div><div class="sv">${vl}</div></div>`).join('')+
+    `<div class="stat-box kcal"><div class="si">🔥</div><div class="sl">Calories</div><div class="sv">${r.calories||0}</div></div>`;
+  const m=r.macros||{protein:0,carbs:0,fat:0,fiber:0};
+  $('det-macros').innerHTML=mBar('Protein',m.protein,60,'#86A788')+mBar('Carbs',m.carbs,100,'#FFCFCF')+mBar('Fat',m.fat,50,'#FFE2E2')+mBar('Fiber',m.fiber,20,'#b5d4b7');
+  $('tab-steps').innerHTML=(r.steps||[]).map((s,i)=>`<div class="step-item"><div class="step-num">${i+1}</div><p class="step-text">${s}</p></div>`).join('');
+  setDetTab('ingredients');
+  $('detail-modal').classList.add('open');
+}
+
+function renderIngredients(r, srvs){
+  const ratio=srvs/(r.servings||1);
+  $('tab-ingredients').innerHTML=(r.ingredients||[]).map(i=>{
+    const adj=i.amount?(Math.round(i.amount*ratio*10)/10):'';
+    return`<div class="ing-item"><div class="ing-dot"></div><span class="ing-amt">${adj} ${i.unit||''}</span><span class="ing-name">${i.name||''}</span></div>`;
+  }).join('');
+}
+
+function setDetTab(tab){
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
+}
+
+// Serving controls
+$('srv-minus').addEventListener('click',()=>{
+  if(curServings<=1) return; curServings--;
+  $('serving-val').textContent=curServings;
+  renderIngredients(recipes[currentId],curServings);
 });
-document.getElementById("search").addEventListener("input",e=>{searchQuery=e.target.value;renderGrid();});
+$('srv-plus').addEventListener('click',()=>{
+  curServings++; $('serving-val').textContent=curServings;
+  renderIngredients(recipes[currentId],curServings);
+});
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-renderCatBar(); renderGrid(); resetManualForm();
+$('det-fav-btn').addEventListener('click',async()=>{
+  const r=recipes[currentId]; if(!r)return;
+  r.favorite=!r.favorite;
+  await saveRecipe(r);
+  $('det-fav-btn').textContent=r.favorite?'❤️':'🤍';
+  $('det-fav-btn').className='fav-btn'+(r.favorite?' on':'');
+  toast(r.favorite?'❤️ Added to favorites':'Removed from favorites');
+});
+$('det-close').addEventListener('click',()=>$('detail-modal').classList.remove('open'));
+$('det-edit-btn').addEventListener('click',()=>{ $('detail-modal').classList.remove('open'); openRecipeModal(currentId); });
+$('det-archive-btn').addEventListener('click',async()=>{
+  const r=recipes[currentId]; if(!r)return;
+  r.archived=!r.archived;
+  await saveRecipe(r); $('detail-modal').classList.remove('open');
+  toast(r.archived?'📦 Archived':'📤 Unarchived');
+});
+$('det-delete-btn').addEventListener('click',async()=>{
+  if(!confirm('Delete this recipe? Cannot be undone.')) return;
+  $('detail-modal').classList.remove('open');
+  await deleteRecipe(currentId);
+});
+$('det-cook-btn').addEventListener('click',()=>{ $('detail-modal').classList.remove('open'); startCookMode(currentId); });
+
+// ── Cooking Mode ───────────────────────────────────────────────────────────
+async function startCookMode(id){
+  const r=recipes[id]; if(!r||!r.steps?.length){ toast('No steps found!'); return; }
+  cookSteps=r.steps; cookStepIdx=0;
+  $('cm-title').textContent=r.title||'Cooking';
+  $('cm-steps-wrap').innerHTML=cookSteps.map((s,i)=>`<div class="cm-step${i===0?' active':''}" id="cms-${i}"><div class="cm-num">${i+1}</div><p class="cm-text">${s}</p></div>`).join('');
+  $('cook-mode').classList.add('open');
+  // Wake lock
+  if('wakeLock' in navigator){
+    try{ wakeLock=await navigator.wakeLock.request('screen'); } catch(e){}
+  }
+}
+function setCookStep(idx){
+  document.querySelectorAll('.cm-step').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.getElementById('cms-'+idx)?.scrollIntoView({behavior:'smooth',block:'center'});
+  cookStepIdx=idx;
+}
+$('cm-prev').addEventListener('click',()=>{ if(cookStepIdx>0) setCookStep(cookStepIdx-1); });
+$('cm-next').addEventListener('click',()=>{
+  if(cookStepIdx<cookSteps.length-1) setCookStep(cookStepIdx+1);
+  else{ exitCookMode(); toast('🎉 Cooking complete! Enjoy your meal!'); }
+});
+$('cm-exit-btn').addEventListener('click',exitCookMode);
+function exitCookMode(){
+  $('cook-mode').classList.remove('open');
+  if(wakeLock){ wakeLock.release(); wakeLock=null; }
+}
+
+// ── Add/Edit Recipe Modal ──────────────────────────────────────────────────
+function openRecipeModal(id=null){
+  editingId=id; pendingPhotoFile=null; pendingPhotoDataUrl=null;
+  $('recipe-modal-title').textContent=id?'Edit Recipe':'Add Recipe';
+  $('recipe-mode-tabs').style.display=id?'none':'flex';
+  setRecipePanel('manual');
+  if(id){
+    const r=recipes[id];
+    $('m-title').value=r.title||'';
+    $('m-desc').value=r.description||'';
+    $('m-prep').value=r.prepTime||'';
+    $('m-cook').value=r.cookTime||'';
+    $('m-servings').value=r.servings||2;
+    $('m-cal').value=r.calories||0;
+    const m=r.macros||{};
+    $('m-protein').value=m.protein||0; $('m-carbs').value=m.carbs||0;
+    $('m-fat').value=m.fat||0; $('m-fiber').value=m.fiber||0;
+    // media
+    if(r.photoUrl){ setMediaMode('photo'); pendingPhotoDataUrl=r.photoUrl; $('photo-preview').src=r.photoUrl; $('photo-preview').style.display='block'; }
+    else { setMediaMode('emoji'); $('emoji-input').value=r.emoji||'🍽️'; }
+    buildIngRows(r.ingredients||[]);
+    buildStepRows(r.steps||[]);
+    renderCatCheckboxes(r.categories||[]);
+  } else {
+    $('m-title').value=''; $('m-desc').value=''; $('m-prep').value=''; $('m-cook').value='';
+    $('m-servings').value=2; $('m-cal').value=0;
+    $('m-protein').value=0; $('m-carbs').value=0; $('m-fat').value=0; $('m-fiber').value=0;
+    $('emoji-input').value='🍽️';
+    $('photo-preview').style.display='none';
+    setMediaMode('emoji');
+    buildIngRows([{amount:'',unit:'g',name:''}]);
+    buildStepRows(['']);
+    renderCatCheckboxes([]);
+  }
+  $('recipe-modal').classList.add('open');
+}
+
+function setRecipePanel(p){
+  $('panel-manual').style.display=p==='manual'?'block':'none';
+  $('panel-ai').style.display=p==='ai'?'block':'none';
+  document.querySelectorAll('#recipe-mode-tabs .mtab').forEach(b=>b.classList.toggle('active',b.dataset.mode===p));
+}
+
+function renderCatCheckboxes(selected=[]){
+  const wrap=$('cat-checkboxes');
+  wrap.innerHTML=Object.values(categories).map(c=>`<div class="cat-checkbox${selected.includes(c.id)?' on':''}" data-catid="${c.id}">${c.emoji||''} ${c.name}</div>`).join('');
+}
+function renderCatList(){
+  $('cat-list-items').innerHTML=Object.values(categories).map(c=>`
+    <div class="cat-list-item">
+      <span class="cat-emoji">${c.emoji||'📁'}</span>
+      <span>${c.name}</span>
+      <button class="icon-btn" data-cat-edit="${c.id}" title="Edit">✏️</button>
+      <button class="icon-btn danger" data-cat-del="${c.id}" title="Delete">🗑</button>
+    </div>`).join('');
+}
+
+function setMediaMode(m){
+  mediaMode=m;
+  document.querySelectorAll('.mp-option').forEach(el=>el.classList.toggle('active',el.dataset.mp===m));
+  $('emoji-picker-wrap').style.display=m==='emoji'?'block':'none';
+  $('photo-upload-wrap').style.display=m==='photo'?'block':'none';
+}
+
+function buildIngRows(ings){
+  const list=$('ing-list'); list.innerHTML='';
+  ings.forEach(i=>list.appendChild(makeIngRow(i)));
+}
+function makeIngRow(i={}){
+  const d=document.createElement('div'); d.className='ing-row';
+  d.innerHTML=`<input data-r="amt" type="number" placeholder="Amt" value="${i.amount||''}"/><select>${['g','kg','ml','liter','cups','tbsp','tsp','pcs','cloves','slices','stalks','medium','large','pinch'].map(u=>`<option${u===i.unit?' selected':''}>${u}</option>`).join('')}</select><input data-r="name" type="text" placeholder="Ingredient" value="${i.name||''}"/><button class="rm-btn">✕</button>`;
+  d.querySelector('.rm-btn').addEventListener('click',()=>d.remove());
+  return d;
+}
+function buildStepRows(steps){
+  const list=$('step-list'); list.innerHTML='';
+  steps.forEach((s,i)=>list.appendChild(makeStepRow(i+1,s)));
+}
+function makeStepRow(num,text=''){
+  const d=document.createElement('div'); d.className='step-row';
+  d.innerHTML=`<div class="step-num-badge">${num}</div><textarea placeholder="Step ${num}…">${text}</textarea><button class="rm-btn">✕</button>`;
+  d.querySelector('.rm-btn').addEventListener('click',()=>d.remove());
+  return d;
+}
+
+function collectRecipe(){
+  const ings=[]; document.querySelectorAll('#ing-list .ing-row').forEach(row=>{
+    const n=row.querySelector('[data-r=name]').value;
+    if(n.trim()) ings.push({amount:parseFloat(row.querySelector('[data-r=amt]').value)||0,unit:row.querySelector('select').value,name:n.trim()});
+  });
+  const steps=[]; document.querySelectorAll('#step-list textarea').forEach(ta=>{if(ta.value.trim())steps.push(ta.value.trim());});
+  const cats=[...$('cat-checkboxes').querySelectorAll('.cat-checkbox.on')].map(el=>el.dataset.catid);
+  return{
+    title:$('m-title').value.trim(), description:$('m-desc').value.trim(),
+    categories:cats, emoji:mediaMode==='emoji'?($('emoji-input').value||'🍽️'):null,
+    prepTime:$('m-prep').value.trim(), cookTime:$('m-cook').value.trim(),
+    servings:parseInt($('m-servings').value)||2, calories:parseInt($('m-cal').value)||0,
+    macros:{protein:parseInt($('m-protein').value)||0,carbs:parseInt($('m-carbs').value)||0,fat:parseInt($('m-fat').value)||0,fiber:parseInt($('m-fiber').value)||0},
+    ingredients:ings, steps
+  };
+}
+
+$('save-recipe-btn').addEventListener('click',async()=>{
+  const data=collectRecipe();
+  if(!data.title){ toast('Please enter a recipe name'); return; }
+  const btn=$('save-recipe-btn'); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    const id=editingId||Date.now().toString();
+    if(mediaMode==='photo' && pendingPhotoFile){
+      data.photoUrl=await uploadPhoto(pendingPhotoFile); // base64, no Storage needed
+      data.emoji=null;
+    } else if(mediaMode==='photo' && pendingPhotoDataUrl && editingId){
+      data.photoUrl=pendingPhotoDataUrl;
+    }
+    if(editingId) data.id=editingId;
+    data.favorite=editingId?recipes[editingId]?.favorite||false:false;
+    data.archived=editingId?recipes[editingId]?.archived||false:false;
+    await saveRecipe(data);
+    $('recipe-modal').classList.remove('open');
+    toast('✅ Recipe saved!');
+  }catch(e){toast('❌ Save failed');} 
+  finally{btn.disabled=false;btn.textContent='💾 Save Recipe';}
+});
+
+// AI Extract
+$('ai-extract-btn').addEventListener('click',async()=>{
+  const text=$('ai-paste-text').value.trim(); if(!text)return;
+  const btn=$('ai-extract-btn'),err=$('ai-error-msg');
+  btn.disabled=true; btn.textContent='✨ Extracting…'; err.style.display='none';
+  try{
+    const extracted=await callClaude(`Extract a recipe from this text and return ONLY valid JSON:\n{"title":"","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}\n\nText:\n${text}`);
+    const data=JSON.parse(extracted.replace(/```json|```/g,'').trim());
+    // Fill manual form
+    $('m-title').value=data.title||''; $('m-desc').value=data.description||'';
+    $('m-prep').value=data.prepTime||''; $('m-cook').value=data.cookTime||'';
+    $('m-servings').value=data.servings||2; $('m-cal').value=data.calories||0;
+    const m=data.macros||{};
+    $('m-protein').value=m.protein||0; $('m-carbs').value=m.carbs||0;
+    $('m-fat').value=m.fat||0; $('m-fiber').value=m.fiber||0;
+    buildIngRows(data.ingredients||[]); buildStepRows(data.steps||[]);
+    $('emoji-input').value='🍽️'; setMediaMode('emoji'); renderCatCheckboxes([]);
+    setRecipePanel('manual');
+    toast('✨ Recipe extracted! Review and save.');
+  }catch(e){err.textContent='Could not extract recipe. Please check the text.';err.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='✨ Extract with AI';}
+});
+
+// ── AI Suggest ─────────────────────────────────────────────────────────────
+let sMode='type';
+document.querySelectorAll('[data-smode]').forEach(btn=>btn.addEventListener('click',()=>{
+  sMode=btn.dataset.smode;
+  document.querySelectorAll('[data-smode]').forEach(b=>b.classList.toggle('active',b.dataset.smode===sMode));
+  $('s-panel-type').style.display=sMode==='type'?'block':'none';
+  $('s-panel-photo').style.display=sMode==='photo'?'block':'none';
+}));
+
+$('suggest-photo-drop').addEventListener('click',()=>$('suggest-photo-file').click());
+$('suggest-photo-file').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ suggestPhotoDataUrl=ev.target.result; $('suggest-photo-preview').src=ev.target.result; $('suggest-photo-preview').style.display='block'; };
+  reader.readAsDataURL(f);
+});
+
+$('suggest-btn').addEventListener('click',async()=>{
+  const ingText=$('suggest-ing-text').value.trim();
+  if(!ingText && !suggestPhotoDataUrl){ toast('Add ingredients or a photo first!'); return; }
+  const btn=$('suggest-btn'); btn.disabled=true; btn.textContent='🧠 Thinking…';
+  $('sugg-result').style.display='none';
+  try{
+    let prompt=`Suggest a recipe I can make. Return JSON:\n{"title":"","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}\n\n`;
+    if(ingText) prompt+=`Available ingredients: ${ingText}\n`;
+    let raw;
+    if(suggestPhotoDataUrl){
+      raw=await callClaudeWithImage(prompt,suggestPhotoDataUrl);
+    } else {
+      raw=await callClaude(prompt);
+    }
+    suggestLastRaw=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    $('sugg-title').textContent=suggestLastRaw.title||'Suggested Recipe';
+    $('sugg-body').textContent=`⏱ ${suggestLastRaw.prepTime||'—'} prep · 🔥 ${suggestLastRaw.cookTime||'—'} cook\n\nIngredients:\n`+
+      (suggestLastRaw.ingredients||[]).map(i=>`• ${i.amount} ${i.unit} ${i.name}`).join('\n')+
+      `\n\nSteps:\n`+(suggestLastRaw.steps||[]).map((s,i)=>`${i+1}. ${s}`).join('\n');
+    $('sugg-result').style.display='block';
+  }catch(e){toast('❌ Could not generate suggestion');}
+  finally{btn.disabled=false;btn.textContent='🧠 Suggest Recipe';}
+});
+
+$('sugg-save-btn').addEventListener('click',async()=>{
+  if(!suggestLastRaw)return;
+  const data={...suggestLastRaw,id:Date.now().toString(),favorite:false,archived:false,emoji:'🍽️',categories:[]};
+  await saveRecipe(data); $('suggest-modal').classList.remove('open'); toast('✅ Recipe saved!');
+});
+$('sugg-another-btn').addEventListener('click',()=>$('suggest-btn').click());
+
+// ── Screenshot Import ──────────────────────────────────────────────────────
+$('ss-drop').addEventListener('click',()=>$('ss-files').click());
+$('ss-files').addEventListener('change',e=>{
+  ssImages=[...e.target.files].map(f=>f);
+  const thumbs=$('ss-thumbs'); thumbs.innerHTML='';
+  ssImages.forEach(f=>{ const reader=new FileReader(); reader.onload=ev=>{ const img=document.createElement('img'); img.src=ev.target.result; img.className='ss-thumb'; thumbs.appendChild(img); }; reader.readAsDataURL(f); });
+  $('ss-extract-btn').style.display=ssImages.length?'block':'none';
+  $('ss-result').style.display='none';
+});
+$('ss-extract-btn').addEventListener('click',async()=>{
+  if(!ssImages.length)return;
+  const btn=$('ss-extract-btn'); btn.disabled=true; btn.textContent='🔍 Reading screenshots…';
+  try{
+    // Convert all images to base64
+    const b64s=await Promise.all(ssImages.map(f=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(f); })));
+    const prompt=`These are screenshots of a recipe. Extract it and return ONLY valid JSON:\n{"title":"","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}\nEstimate calories/macros if not shown.`;
+    let raw;
+    if(b64s.length===1){
+      raw=await callClaudeWithImage(prompt,b64s[0]);
+    } else {
+      // Multi-image: send all
+      raw=await callClaudeMultiImage(prompt,b64s);
+    }
+    ssLastRaw=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    $('ss-result-title').textContent=ssLastRaw.title||'Extracted Recipe';
+    $('ss-result-body').textContent=`Ingredients:\n`+(ssLastRaw.ingredients||[]).map(i=>`• ${i.amount} ${i.unit} ${i.name}`).join('\n')+`\n\nSteps:\n`+(ssLastRaw.steps||[]).map((s,i)=>`${i+1}. ${s}`).join('\n');
+    $('ss-result').style.display='block';
+  }catch(e){toast('❌ Could not read screenshots');}
+  finally{btn.disabled=false;btn.textContent='🔍 Extract Recipe';}
+});
+$('ss-save-btn').addEventListener('click',async()=>{
+  if(!ssLastRaw)return;
+  const data={...ssLastRaw,id:Date.now().toString(),favorite:false,archived:false,emoji:'🍽️',categories:[]};
+  await saveRecipe(data); $('screenshot-modal').classList.remove('open'); toast('✅ Recipe saved!');
+});
+$('ss-discard-btn').addEventListener('click',()=>{ $('ss-result').style.display='none'; ssLastRaw=null; });
+
+// ── Claude API helper ──────────────────────────────────────────────────────
+async function callClaude(prompt){
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
+  const data=await resp.json();
+  return data.content.map(b=>b.text||'').join('');
+}
+async function callClaudeWithImage(prompt,dataUrl){
+  const [header,b64]=dataUrl.split(',');
+  const mime=header.match(/:(.*?);/)[1];
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:prompt}]}]})});
+  const data=await resp.json();
+  return data.content.map(b=>b.text||'').join('');
+}
+async function callClaudeMultiImage(prompt,dataUrls){
+  const content=dataUrls.map(du=>{const[h,b64]=du.split(',');const mime=h.match(/:(.*?);/)[1];return{type:'image',source:{type:'base64',media_type:mime,data:b64}};});
+  content.push({type:'text',text:prompt});
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
+  const data=await resp.json();
+  return data.content.map(b=>b.text||'').join('');
+}
+
+// ── Global event delegation ────────────────────────────────────────────────
+document.addEventListener('click',e=>{
+  // Card
+  const card=e.target.closest('.card');
+  if(card && !e.target.closest('.card-fav')){ openDetail(card.dataset.id); return; }
+  // Fav on card
+  const fav=e.target.closest('.card-fav');
+  if(fav){
+    const id=fav.dataset.fav; const r=recipes[id]; if(!r)return;
+    r.favorite=!r.favorite; saveRecipe(r);
+    fav.textContent=r.favorite?'❤️':'🤍'; fav.classList.toggle('on',r.favorite);
+    toast(r.favorite?'❤️ Added to favorites':'Removed from favorites'); return;
+  }
+  // Cat pill
+  const cp=e.target.closest('.cat-pill');
+  if(cp){ activeCat=cp.dataset.catid; renderCatBar(); renderGrid(); return; }
+  // View tab
+  const vt=e.target.closest('.vtab');
+  if(vt){ activeView=vt.dataset.view; document.querySelectorAll('.vtab').forEach(b=>b.classList.toggle('active',b.dataset.view===activeView)); renderGrid(); return; }
+  // Detail tab
+  const tb=e.target.closest('.tabbtn');
+  if(tb){ setDetTab(tb.dataset.tab); return; }
+  // Media picker
+  const mp=e.target.closest('.mp-option');
+  if(mp){ setMediaMode(mp.dataset.mp); return; }
+  // Cat checkbox
+  const cc=e.target.closest('.cat-checkbox');
+  if(cc){ cc.classList.toggle('on'); return; }
+  // Recipe mode tabs
+  const rmt=e.target.closest('#recipe-mode-tabs .mtab');
+  if(rmt){ setRecipePanel(rmt.dataset.mode); return; }
+  // Ing add/step add
+  if(e.target.id==='add-ing-btn'){ $('ing-list').appendChild(makeIngRow()); return; }
+  if(e.target.id==='add-step-btn'){ const l=$('step-list'); l.appendChild(makeStepRow(l.children.length+1)); return; }
+  // FAB
+  if(e.target.id==='fab'){ fabOpen=!fabOpen; $('fab-menu').classList.toggle('hidden',!fabOpen); $('fab').textContent=fabOpen?'✕':'+'; return; }
+  if(e.target.id==='fab-add-recipe'||e.target.closest('#fab-add-recipe')){ fabClose(); openRecipeModal(); return; }
+  if(e.target.id==='fab-ai-suggest'||e.target.closest('#fab-ai-suggest')){ fabClose(); $('suggest-modal').classList.add('open'); return; }
+  if(e.target.id==='fab-screenshot'||e.target.closest('#fab-screenshot')){ fabClose(); $('screenshot-modal').classList.add('open'); return; }
+  // Close modals on bg
+  if(e.target.classList.contains('modal-bg')){ e.target.classList.remove('open'); return; }
+  // Modal close btns
+  ['recipe-modal-close','suggest-close','screenshot-close','cats-close'].forEach(id=>{ if(e.target.id===id){ e.target.closest('.modal-bg')?.classList.remove('open'); }});
+  // Manage cats btn
+  if(e.target.id==='manage-cats-btn'){ renderCatList(); $('cats-modal').classList.add('open'); return; }
+  // Cat edit/delete
+  const ceDel=e.target.closest('[data-cat-del]');
+  if(ceDel){ if(confirm('Delete this category?')) deleteCat(ceDel.dataset.catDel); return; }
+  const ceEdit=e.target.closest('[data-cat-edit]');
+  if(ceEdit){
+    const c=categories[ceEdit.dataset.catEdit]; if(!c)return;
+    const name=prompt('Category name:',c.name); if(!name)return;
+    const emoji=prompt('Emoji:',c.emoji||'📁')||c.emoji;
+    saveCat({...c,name:name.trim(),emoji}); return;
+  }
+  // Photo upload
+  if(e.target.id==='photo-drop'){ $('photo-file').click(); return; }
+  // Sign out
+  if(e.target.id==='signout-btn'){ signOut(auth); return; }
+  // Cook mode header btn
+  if(e.target.id==='cook-mode-btn'){ if(currentId) startCookMode(currentId); else toast('Open a recipe first!'); return; }
+  // Install
+  if(e.target.id==='install-btn'){ if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.then(()=>{ deferredPrompt=null; $('install-banner').classList.remove('show'); }); } return; }
+  if(e.target.id==='install-dismiss'){ $('install-banner').classList.remove('show'); return; }
+});
+
+// Add cat
+$('add-cat-btn').addEventListener('click',()=>{
+  const name=$('new-cat-name').value.trim(); if(!name)return;
+  const emoji=$('new-cat-emoji').value.trim()||'📁';
+  saveCat({name,emoji}); $('new-cat-name').value=''; $('new-cat-emoji').value='';
+});
+
+// Photo file input
+$('photo-file').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  pendingPhotoFile=f;
+  const reader=new FileReader();
+  reader.onload=ev=>{ pendingPhotoDataUrl=ev.target.result; $('photo-preview').src=ev.target.result; $('photo-preview').style.display='block'; };
+  reader.readAsDataURL(f);
+});
+
+// Search
+$('search').addEventListener('input',e=>{ searchQ=e.target.value; renderGrid(); });
+
+function fabClose(){ fabOpen=false; $('fab-menu').classList.add('hidden'); $('fab').textContent='+'; }
+
+// ── PWA ────────────────────────────────────────────────────────────────────
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; $('install-banner').classList.add('show'); });
+window.addEventListener('appinstalled',()=>$('install-banner').classList.remove('show'));
 </script>
 </body>
 </html>
