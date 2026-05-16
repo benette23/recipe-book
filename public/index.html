@@ -110,7 +110,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
 
 /* ── Modal base ── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(6px)}
-.modal-bg.open{display:flex}
+.modal-bg.open{display:flex!important}
 .modal-box{background:var(--cream);border-radius:24px;width:100%;max-width:580px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .modal-hdr{padding:20px 22px 0;flex-shrink:0}
 .modal-hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -951,111 +951,9 @@ $('save-recipe-btn').addEventListener('click',async()=>{
 
 // No AI extraction — manual entry only
 
-// ── AI Suggest ─────────────────────────────────────────────────────────────
-let sMode='type';
-document.querySelectorAll('[data-smode]').forEach(btn=>btn.addEventListener('click',()=>{
-  sMode=btn.dataset.smode;
-  document.querySelectorAll('[data-smode]').forEach(b=>b.classList.toggle('active',b.dataset.smode===sMode));
-  $('s-panel-type').style.display=sMode==='type'?'block':'none';
-  $('s-panel-photo').style.display=sMode==='photo'?'block':'none';
-}));
 
-$('suggest-photo-drop').addEventListener('click',()=>$('suggest-photo-file').click());
-$('suggest-photo-file').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{ suggestPhotoDataUrl=ev.target.result; $('suggest-photo-preview').src=ev.target.result; $('suggest-photo-preview').style.display='block'; };
-  reader.readAsDataURL(f);
-});
 
-$('suggest-btn').addEventListener('click',async()=>{
-  const ingText=$('suggest-ing-text').value.trim();
-  if(!ingText && !suggestPhotoDataUrl){ toast('Add ingredients or a photo first!'); return; }
-  const btn=$('suggest-btn'); btn.disabled=true; btn.textContent='🧠 Thinking…';
-  $('sugg-result').style.display='none';
-  try{
-    let prompt=`Suggest a recipe I can make. Return JSON:\n{"title":"","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}\n\n`;
-    if(ingText) prompt+=`Available ingredients: ${ingText}\n`;
-    let raw;
-    if(suggestPhotoDataUrl){
-      raw=await callClaudeWithImage(prompt,suggestPhotoDataUrl);
-    } else {
-      raw=await callClaude(prompt);
-    }
-    suggestLastRaw=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    $('sugg-title').textContent=suggestLastRaw.title||'Suggested Recipe';
-    $('sugg-body').textContent=`⏱ ${suggestLastRaw.prepTime||'—'} prep · 🔥 ${suggestLastRaw.cookTime||'—'} cook\n\nIngredients:\n`+
-      (suggestLastRaw.ingredients||[]).map(i=>`• ${i.amount} ${i.unit} ${i.name}`).join('\n')+
-      `\n\nSteps:\n`+(suggestLastRaw.steps||[]).map((s,i)=>`${i+1}. ${s}`).join('\n');
-    $('sugg-result').style.display='block';
-  }catch(e){toast('❌ Could not generate suggestion');}
-  finally{btn.disabled=false;btn.textContent='🧠 Suggest Recipe';}
-});
 
-$('sugg-save-btn').addEventListener('click',async()=>{
-  if(!suggestLastRaw)return;
-  const data={...suggestLastRaw,id:Date.now().toString(),favorite:false,archived:false,emoji:'🍽️',categories:[]};
-  await saveRecipe(data); $('suggest-modal').classList.remove('open'); toast('✅ Recipe saved!');
-});
-$('sugg-another-btn').addEventListener('click',()=>$('suggest-btn').click());
-
-// ── Screenshot Import ──────────────────────────────────────────────────────
-$('ss-drop').addEventListener('click',()=>$('ss-files').click());
-$('ss-files').addEventListener('change',e=>{
-  ssImages=[...e.target.files].map(f=>f);
-  const thumbs=$('ss-thumbs'); thumbs.innerHTML='';
-  ssImages.forEach(f=>{ const reader=new FileReader(); reader.onload=ev=>{ const img=document.createElement('img'); img.src=ev.target.result; img.className='ss-thumb'; thumbs.appendChild(img); }; reader.readAsDataURL(f); });
-  $('ss-extract-btn').style.display=ssImages.length?'block':'none';
-  $('ss-result').style.display='none';
-});
-$('ss-extract-btn').addEventListener('click',async()=>{
-  if(!ssImages.length)return;
-  const btn=$('ss-extract-btn'); btn.disabled=true; btn.textContent='🔍 Reading screenshots…';
-  try{
-    // Convert all images to base64
-    const b64s=await Promise.all(ssImages.map(f=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(f); })));
-    const prompt=`These are screenshots of a recipe. Extract it and return ONLY valid JSON:\n{"title":"","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}\nEstimate calories/macros if not shown.`;
-    let raw;
-    if(b64s.length===1){
-      raw=await callClaudeWithImage(prompt,b64s[0]);
-    } else {
-      // Multi-image: send all
-      raw=await callClaudeMultiImage(prompt,b64s);
-    }
-    ssLastRaw=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    $('ss-result-title').textContent=ssLastRaw.title||'Extracted Recipe';
-    $('ss-result-body').textContent=`Ingredients:\n`+(ssLastRaw.ingredients||[]).map(i=>`• ${i.amount} ${i.unit} ${i.name}`).join('\n')+`\n\nSteps:\n`+(ssLastRaw.steps||[]).map((s,i)=>`${i+1}. ${s}`).join('\n');
-    $('ss-result').style.display='block';
-  }catch(e){toast('❌ Could not read screenshots');}
-  finally{btn.disabled=false;btn.textContent='🔍 Extract Recipe';}
-});
-$('ss-save-btn').addEventListener('click',async()=>{
-  if(!ssLastRaw)return;
-  const data={...ssLastRaw,id:Date.now().toString(),favorite:false,archived:false,emoji:'🍽️',categories:[]};
-  await saveRecipe(data); $('screenshot-modal').classList.remove('open'); toast('✅ Recipe saved!');
-});
-$('ss-discard-btn').addEventListener('click',()=>{ $('ss-result').style.display='none'; ssLastRaw=null; });
-
-// ── Claude API helper ──────────────────────────────────────────────────────
-async function callClaude(prompt){
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
-  const data=await resp.json();
-  return data.content.map(b=>b.text||'').join('');
-}
-async function callClaudeWithImage(prompt,dataUrl){
-  const [header,b64]=dataUrl.split(',');
-  const mime=header.match(/:(.*?);/)[1];
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:prompt}]}]})});
-  const data=await resp.json();
-  return data.content.map(b=>b.text||'').join('');
-}
-async function callClaudeMultiImage(prompt,dataUrls){
-  const content=dataUrls.map(du=>{const[h,b64]=du.split(',');const mime=h.match(/:(.*?);/)[1];return{type:'image',source:{type:'base64',media_type:mime,data:b64}};});
-  content.push({type:'text',text:prompt});
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
-  const data=await resp.json();
-  return data.content.map(b=>b.text||'').join('');
-}
 
 // ── Global event delegation ────────────────────────────────────────────────
 document.addEventListener('click',e=>{
@@ -1092,7 +990,10 @@ document.addEventListener('click',e=>{
   if(e.target.id==='add-ing-btn'){ $('ing-list').appendChild(makeIngRow()); return; }
   if(e.target.id==='add-step-btn'){ const l=$('step-list'); l.appendChild(makeStepRow(l.children.length+1)); return; }
   // FAB — open recipe modal directly
-  if(e.target.id==='fab'){ openRecipeModal(); return; }
+  if(e.target.id==='fab'||e.target.closest('#fab')){
+    openRecipeModal();
+    return;
+  }
   // Close modals on bg
   if(e.target.classList.contains('modal-bg')){ e.target.classList.remove('open'); return; }
   // Modal close btns
@@ -1139,7 +1040,10 @@ $('photo-file').addEventListener('change',e=>{
 // Search
 $('search').addEventListener('input',e=>{ searchQ=e.target.value; renderGrid(); });
 
-function fabClose(){ fabOpen=false; $('fab-menu').classList.add('hidden'); $('fab').textContent='+'; }
+
+
+// ── FAB direct listener (backup) ──────────────────────────────────────────
+$('fab').onclick = () => openRecipeModal();
 
 // ── PWA ────────────────────────────────────────────────────────────────────
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
