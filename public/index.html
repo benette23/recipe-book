@@ -548,25 +548,21 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,signInWithPopup,GoogleAuthProvider,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,collection,doc,getDocs,setDoc,deleteDoc,onSnapshot,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import{getStorage,ref,uploadBytes,getDownloadURL,deleteObject}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+// Storage import removed — photos stored as base64 in Firestore instead
 
-// ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyCTlZ9LKJ35aLOO_vOEGhriznLUrY_sY4Q",
   authDomain: "recipe-book-4f9f8.firebaseapp.com",
-  databaseURL: "https://recipe-book-4f9f8-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "recipe-book-4f9f8",
   storageBucket: "recipe-book-4f9f8.firebasestorage.app",
   messagingSenderId: "103538556938",
-  appId: "1:103538556938:web:3234fc0c41c0c56e7cdff3",
-  measurementId: "G-XS0DBMP636"
+  appId: "1:103538556938:web:3234fc0c41c0c56e7cdff3"
 };
-// ───────────────────────────────────────────────────────────────────────────
 
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
-const stor = getStorage(app);
+// No Firebase Storage needed — photos are stored as base64 strings in Firestore
 
 // ── State ──────────────────────────────────────────────────────────────────
 let recipes    = {};
@@ -681,7 +677,6 @@ async function saveRecipe(data){
 
 async function deleteRecipe(id){
   try{
-    if(recipes[id]?.photoUrl) await deleteObject(ref(stor,`users/${user.uid}/photos/${id}`)).catch(()=>{});
     await deleteDoc(recipeDoc(id));
     delete recipes[id];
     renderGrid(); toast('🗑 Recipe deleted');
@@ -711,12 +706,31 @@ async function deleteCat(id){
   renderCatBar(); renderCatCheckboxes(); renderCatList(); renderGrid();
 }
 
-// ── Upload photo ───────────────────────────────────────────────────────────
-async function uploadPhoto(file, recipeId){
-  const path=`users/${user.uid}/photos/${recipeId}`;
-  const r=ref(stor,path);
-  await uploadBytes(r,file);
-  return await getDownloadURL(r);
+// ── "Upload" photo — compress and store as base64 in Firestore ────────────
+async function uploadPhoto(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      // Compress via canvas to keep it under Firestore 1MB doc limit
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 600; // max width/height px
+        let w = img.width, h = img.height;
+        if(w > MAX || h > MAX){
+          if(w > h){ h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // ── Render grid ────────────────────────────────────────────────────────────
@@ -996,7 +1010,7 @@ $('save-recipe-btn').addEventListener('click',async()=>{
   try{
     const id=editingId||Date.now().toString();
     if(mediaMode==='photo' && pendingPhotoFile){
-      data.photoUrl=await uploadPhoto(pendingPhotoFile,id);
+      data.photoUrl=await uploadPhoto(pendingPhotoFile); // base64, no Storage needed
       data.emoji=null;
     } else if(mediaMode==='photo' && pendingPhotoDataUrl && editingId){
       data.photoUrl=pendingPhotoDataUrl;
