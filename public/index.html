@@ -321,12 +321,6 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
 
   <main><div id="grid"></div></main>
 
-  <!-- FAB -->
-  <div id="fab-menu" class="hidden">
-    <div class="fab-item" id="fab-screenshot"><span class="label">Import from Screenshot</span><div class="icon">📸</div></div>
-    <div class="fab-item" id="fab-ai-suggest"><span class="label">Suggest from Ingredients</span><div class="icon">🧠</div></div>
-    <div class="fab-item" id="fab-add-recipe"><span class="label">Add Recipe</span><div class="icon">📝</div></div>
-  </div>
   <button id="fab">+</button>
 </div>
 
@@ -381,10 +375,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
         <h2 id="recipe-modal-title">Add Recipe</h2>
         <button class="modal-close-btn" id="recipe-modal-close">✕</button>
       </div>
-      <div class="mode-tabs" id="recipe-mode-tabs">
-        <button class="mtab active" data-mode="manual">✏️ Manual</button>
-        <button class="mtab" data-mode="ai">✨ Paste Text</button>
-      </div>
+      
     </div>
     <div class="modal-scroll">
       <!-- Manual panel -->
@@ -438,79 +429,12 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
         <button class="green-btn" id="save-recipe-btn">💾 Save Recipe</button>
       </div>
 
-      <!-- AI / Paste panel -->
-      <div id="panel-ai" style="display:none">
-        <p style="color:#777;font-size:13px;margin-top:8px;margin-bottom:12px;line-height:1.6">Paste any recipe text, article, or social media post and Claude will extract and fill in all the details automatically.</p>
-        <textarea id="ai-paste-text" style="width:100%;height:180px;border-radius:12px;border:1.5px solid #ddd;padding:12px;font-size:13px;font-family:'Lato',sans-serif;resize:vertical;background:#fff;outline:none" placeholder="Paste recipe text here…"></textarea>
-        <p id="ai-error-msg"></p>
-        <button class="green-btn" id="ai-extract-btn">✨ Extract with AI</button>
-      </div>
+
     </div>
   </div>
 </div>
 
-<!-- AI Suggest from Ingredients Modal -->
-<div class="modal-bg" id="suggest-modal">
-  <div class="modal-box">
-    <div class="modal-hdr">
-      <div class="modal-hdr-row">
-        <h2>Suggest a Recipe</h2>
-        <button class="modal-close-btn" id="suggest-close">✕</button>
-      </div>
-    </div>
-    <div class="modal-scroll">
-      <p style="color:#777;font-size:13px;margin-top:4px;margin-bottom:12px;line-height:1.6">Type your ingredients below, upload a photo of them, or both! Claude will suggest a recipe you can make.</p>
-      <div class="mode-tabs">
-        <button class="mtab active" data-smode="type">⌨️ Type Ingredients</button>
-        <button class="mtab" data-smode="photo">📷 Upload Photo</button>
-      </div>
-      <div id="s-panel-type">
-        <textarea id="suggest-ing-text" style="width:100%;height:120px;border-radius:12px;border:1.5px solid #ddd;padding:12px;font-size:13px;font-family:'Lato',sans-serif;resize:vertical;background:#fff;outline:none;margin-top:8px" placeholder="e.g. chicken, ginger, soy sauce, garlic…"></textarea>
-      </div>
-      <div id="s-panel-photo" style="display:none;margin-top:8px">
-        <div class="photo-drop" id="suggest-photo-drop">Tap or drag a photo of your ingredients</div>
-        <input type="file" id="suggest-photo-file" accept="image/*" style="display:none"/>
-        <img id="suggest-photo-preview" src="" alt="" style="width:100%;border-radius:10px;margin-top:8px;display:none"/>
-      </div>
-      <button class="green-btn" id="suggest-btn">🧠 Suggest Recipe</button>
-      <div id="sugg-result" style="display:none;background:#fff;border-radius:14px;padding:16px;margin-top:14px;border:1px solid var(--border)">
-        <h3 id="sugg-title" style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px"></h3>
-        <p id="sugg-body" style="font-size:13px;color:#666;line-height:1.7;white-space:pre-wrap"></p>
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button class="dact-btn dact-edit" id="sugg-save-btn" style="flex:1">💾 Save this Recipe</button>
-          <button class="dact-btn dact-archive" id="sugg-another-btn" style="flex:1">🔄 Try Another</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- Screenshot Import Modal -->
-<div class="modal-bg" id="screenshot-modal">
-  <div class="modal-box">
-    <div class="modal-hdr">
-      <div class="modal-hdr-row">
-        <h2>Import from Screenshot</h2>
-        <button class="modal-close-btn" id="screenshot-close">✕</button>
-      </div>
-    </div>
-    <div class="modal-scroll">
-      <p style="color:#777;font-size:13px;margin-top:4px;margin-bottom:14px;line-height:1.6">Upload one or more screenshots of a recipe. Claude will read them all and convert it into a saved recipe.</p>
-      <div class="ss-dropzone" id="ss-drop">📷 Tap or drag screenshots here<br/><span style="font-size:11px;margin-top:4px;display:block">Multiple images supported</span></div>
-      <input type="file" id="ss-files" accept="image/*" multiple style="display:none"/>
-      <div class="ss-thumbs" id="ss-thumbs"></div>
-      <button class="green-btn" id="ss-extract-btn" style="display:none">🔍 Extract Recipe</button>
-      <div id="ss-result" style="display:none;background:#fff;border-radius:14px;padding:16px;margin-top:14px;border:1px solid var(--border)">
-        <h3 id="ss-result-title" style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:8px"></h3>
-        <p id="ss-result-body" style="font-size:13px;color:#666;line-height:1.7;white-space:pre-wrap"></p>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="dact-btn dact-edit" id="ss-save-btn" style="flex:1">💾 Save Recipe</button>
-          <button class="dact-btn dact-delete" id="ss-discard-btn" style="flex:1">✕ Discard</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Manage Categories Modal -->
 <div class="modal-bg" id="cats-modal">
@@ -1025,28 +949,7 @@ $('save-recipe-btn').addEventListener('click',async()=>{
   finally{btn.disabled=false;btn.textContent='💾 Save Recipe';}
 });
 
-// AI Extract
-$('ai-extract-btn').addEventListener('click',async()=>{
-  const text=$('ai-paste-text').value.trim(); if(!text)return;
-  const btn=$('ai-extract-btn'),err=$('ai-error-msg');
-  btn.disabled=true; btn.textContent='✨ Extracting…'; err.style.display='none';
-  try{
-    const extracted=await callClaude(`Extract a recipe from this text and return ONLY valid JSON:\n{"title":"","description":"","prepTime":"X min","cookTime":"X min","servings":2,"calories":0,"macros":{"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"amount":0,"unit":"g","name":""}],"steps":[""]}\n\nText:\n${text}`);
-    const data=JSON.parse(extracted.replace(/```json|```/g,'').trim());
-    // Fill manual form
-    $('m-title').value=data.title||''; $('m-desc').value=data.description||'';
-    $('m-prep').value=data.prepTime||''; $('m-cook').value=data.cookTime||'';
-    $('m-servings').value=data.servings||2; $('m-cal').value=data.calories||0;
-    const m=data.macros||{};
-    $('m-protein').value=m.protein||0; $('m-carbs').value=m.carbs||0;
-    $('m-fat').value=m.fat||0; $('m-fiber').value=m.fiber||0;
-    buildIngRows(data.ingredients||[]); buildStepRows(data.steps||[]);
-    $('emoji-input').value='🍽️'; setMediaMode('emoji'); renderCatCheckboxes([]);
-    setRecipePanel('manual');
-    toast('✨ Recipe extracted! Review and save.');
-  }catch(e){err.textContent='Could not extract recipe. Please check the text.';err.style.display='block';}
-  finally{btn.disabled=false;btn.textContent='✨ Extract with AI';}
-});
+// No AI extraction — manual entry only
 
 // ── AI Suggest ─────────────────────────────────────────────────────────────
 let sMode='type';
@@ -1188,11 +1091,8 @@ document.addEventListener('click',e=>{
   // Ing add/step add
   if(e.target.id==='add-ing-btn'){ $('ing-list').appendChild(makeIngRow()); return; }
   if(e.target.id==='add-step-btn'){ const l=$('step-list'); l.appendChild(makeStepRow(l.children.length+1)); return; }
-  // FAB
-  if(e.target.id==='fab'){ fabOpen=!fabOpen; $('fab-menu').classList.toggle('hidden',!fabOpen); $('fab').textContent=fabOpen?'✕':'+'; return; }
-  if(e.target.id==='fab-add-recipe'||e.target.closest('#fab-add-recipe')){ fabClose(); openRecipeModal(); return; }
-  if(e.target.id==='fab-ai-suggest'||e.target.closest('#fab-ai-suggest')){ fabClose(); $('suggest-modal').classList.add('open'); return; }
-  if(e.target.id==='fab-screenshot'||e.target.closest('#fab-screenshot')){ fabClose(); $('screenshot-modal').classList.add('open'); return; }
+  // FAB — open recipe modal directly
+  if(e.target.id==='fab'){ openRecipeModal(); return; }
   // Close modals on bg
   if(e.target.classList.contains('modal-bg')){ e.target.classList.remove('open'); return; }
   // Modal close btns
