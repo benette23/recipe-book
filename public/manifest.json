@@ -4,10 +4,16 @@
   "description": "Your personal recipe book",
   "start_url": "/recipe-book/",
   "display": "standalone",
-  "background_color": "#FFFDEC",
+  "background_color": "#86A788",
   "theme_color": "#86A788",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
