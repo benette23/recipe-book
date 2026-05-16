@@ -375,7 +375,10 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
         <h2 id="recipe-modal-title">Add Recipe</h2>
         <button class="modal-close-btn" id="recipe-modal-close">✕</button>
       </div>
-      
+    </div>
+    <div class="modal-scroll">
+      <!-- Manual panel always visible -->
+      <div id="panel-manual">
     </div>
     <div class="modal-scroll">
       <!-- Manual panel -->
@@ -863,9 +866,7 @@ function openRecipeModal(id=null){
 }
 
 function setRecipePanel(p){
-  $('panel-manual').style.display=p==='manual'?'block':'none';
-  $('panel-ai').style.display=p==='ai'?'block':'none';
-  document.querySelectorAll('#recipe-mode-tabs .mtab').forEach(b=>b.classList.toggle('active',b.dataset.mode===p));
+  $('panel-manual').style.display='block';
 }
 
 function renderCatCheckboxes(selected=[]){
