@@ -1,4 +1,4 @@
-const CACHE = 'kain-v2';
+const CACHE = 'kain-v3';
 const ASSETS = [
   '/recipe-book/',
   '/recipe-book/index.html',
