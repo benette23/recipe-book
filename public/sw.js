@@ -1,4 +1,4 @@
-const CACHE = 'recipe-book-v1';
+const CACHE = 'kain-v1';
 const ASSETS = [
   '/recipe-book/',
   '/recipe-book/index.html',
@@ -25,6 +25,9 @@ self.addEventListener('activate', e => {
 
 // Fetch: serve from cache, fall back to network
 self.addEventListener('fetch', e => {
+  // Skip cross-origin requests (Firebase, Google APIs, fonts)
+  if (!e.request.url.startsWith(self.location.origin)) return;
+
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
